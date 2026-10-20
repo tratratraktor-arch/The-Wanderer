@@ -28,7 +28,7 @@ canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 #xpf{display:block;height:100%;width:0;background:linear-gradient(#e8c04a,#8a6a1e)}
 #bn{left:0;right:0;top:24%;text-align:center;font-size:max(16px,4cqw);color:#e0c070;opacity:0;transition:opacity .6s;letter-spacing:.3em}
 #bn.on{opacity:1}
-#ovCode{background:rgba(5,4,7,.98);z-index:70}
+#ovCode,#ovFast{background:rgba(5,4,7,.98);z-index:70}
 #cIn{width:100%;font:600 22px 'Cormorant SC',serif;letter-spacing:.1em;text-align:center;color:var(--parch);background:#16131a;border:3px solid var(--edge);padding:10px;margin:8px 0;box-sizing:border-box}
 #bBird{position:fixed;top:10px;right:12px;z-index:60;background:none;border:0;color:#a8998a;opacity:.45;cursor:pointer;padding:6px}#bBird:hover{opacity:.9}
 #bossb{left:18%;right:18%;top:calc(1cqw + max(18px,4.4cqw) + 1.6cqw);height:max(10px,2.2cqw);background:#120c0c;border:max(2px,.3cqw) solid var(--edge);display:none}#bossb.on{display:block}#bossf{display:block;height:100%;width:100%;background:linear-gradient(#a03aff,#4a1a8a)}#bosst{position:absolute;inset:0;text-align:center;font-size:max(8px,1.6cqw);line-height:max(10px,2.2cqw);color:#f0e0ff;letter-spacing:.2em}
@@ -97,6 +97,7 @@ canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 <div class="coins" id="mCoins"></div>
 <div class="menu">
 <button class="btn" id="bPlay" type="button">В путь</button>
+<button class="btn" id="bFast" type="button">Быстрый режим</button>
 <button class="btn" id="bShop" type="button">Лавка</button>
 <button class="btn" id="bHeroes" type="button">Герои</button>
 <button class="btn" id="bBook" type="button">Книга слияний</button>
@@ -105,6 +106,7 @@ canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 <p class="hint">Движение: WASD или стрелки (на телефоне — перетаскивание по экрану). Оружие бьёт само. На каждом уровне выбирай усиление: 1 / 2 / 3 или клик. Пауза: Esc. Прогресс хранится в этом браузере.</p>
 </div></div>
 
+<div class="ov" id="ovFast"><div class="in"><h2>Быстрый режим</h2><p>Короткая ночь с боссом в конце. Монеты за неё начисляются, но достижения, цели, открытия и книга слияний не засчитываются, а результат не уходит в бот.</p><div class="menu"><button class="btn" id="bF5" type="button">5 минут</button><button class="btn" id="bF10" type="button">10 минут</button><button class="btn" id="bFBack" type="button">Назад</button></div></div></div>
 <div class="ov" id="ovCode"><div class="in"><h2>Тайное слово</h2><p>Введи код, чтобы получить награду в боте.</p><input id="cIn" type="text" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false"><p class="hint" id="cMsg"></p><div class="menu"><button class="btn" id="cOk" type="button">Подтвердить</button><button class="btn" id="cBack" type="button">Назад</button></div></div></div>
 <div class="ov" id="ovMeta"><div class="in">
 <div class="mh"><h2 id="metaT"></h2><div class="coins" id="metaC"></div><button class="btn sm" id="bBack" type="button">Назад</button></div>
@@ -139,7 +141,7 @@ canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
-let W=384,H=216;const TS=16,GOAL=1200;
+let W=384,H=216,GOAL=1200;const TS=16;
 const cv=$('c'),g=cv.getContext('2d');g.imageSmoothingEnabled=false;
 
 /* ---------- save ---------- */
@@ -405,6 +407,7 @@ const upl=k=>SV.up[k]||0;
 const CAP=300;
 function newGame(){
   const he=HEROES[SV.hero]||HEROES.recruit,m=he.mods||{};
+  GOAL=FAST?FAST*60:1200;FK=FAST?1200/GOAL*FKD:1;BOSSK=FAST===5?.4:FAST===10?.65:1;NEEDK=FAST===5?.55:FAST===10?.75:1;
   T=0;kills=0;shake=0;spawnAcc=0;evDone={};pending=0;bossDead=false;gotGoals=[];
   P={x:0,y:0,hp:0,mhp:100+10*upl('hp')+(m.hp||0),inv:0,hurt:0,face:0,fr:0,lvl:1,xp:0,need:need(1),w:{},p:{},evo:{},cd:{},aura:0,mv:false,aim:0,orb:0,
      spd:1+.04*upl('spd')+(m.spd||0),pow:1+.05*upl('pow')+(m.pow||0),lightB:7*upl('oil')+(m.light||0),arm:upl('arm')+(m.arm||0),reg:.25*upl('reg')+(m.reg||0),
@@ -413,7 +416,7 @@ function newGame(){
   E=[];GM=[];BL=[];PD=[];FL=[];PT=[];FX=[];AR=[];HZ=[];TG=[];EX=[];AX=[];
   for(let i=0;i<6;i++)spawn('rag');for(let i=0;i<4;i++)spawn('wolf');
 }
-function need(l){return Math.floor(NEED_A+l*NEED_B+l*l*NEED_C)}
+function need(l){return Math.max(4,Math.floor((NEED_A+l*NEED_B+l*l*NEED_C)*NEEDK))}
 var NEED_A=6,NEED_B=5,NEED_C=.45;
 const dmgMul=()=>P.pow+.07*(P.p.whetstone||0);
 const areaMul=()=>1+.05*(P.p.charm||0);
@@ -447,8 +450,9 @@ const lightR=()=>62+P.lightB+8*(P.p.amulet||0)+(P.w.lantern?lnS(P.w.lantern,P.ev
 
 /* ---------- enemies ---------- */
 function ringPos(rad){const a=RR()*Math.PI*2;return[P.x+Math.cos(a)*rad,P.y+Math.sin(a)*rad]}
-var HP_A=210,HP_B=700;
-const hpScale=()=>1+T/HP_A+Math.pow(T/HP_B,2);
+var HP_A=210,HP_B=700,FKD=.75;
+let FAST=0,FK=1,BOSSK=1,NEEDK=1;const VT=()=>T*FK;
+const hpScale=()=>1+VT()/HP_A+Math.pow(VT()/HP_B,2);
 function spawn(t,pos,hpMul){const d=ET[t],[x,y]=pos||ringPos(238+RR()*26),sc=(t==='elite'||t==='boss')?1:hpScale();
   const hp=d.hp*sc*(hpMul||1);
   const e={id:nextId++,t,d,x,y,hp,mhp:hp,kx:0,ky:0,fl:0,fr:RR()*4,face:0,r:d.r,ph:RR()*6,boss:t==='elite'||t==='boss',ct:0,sh:1+RR()*2,cd:2+RR()*3,st:0,wind:0,dx:0,dy:0,s1:3,s2:4,s3:7,ph0:0};
@@ -461,23 +465,23 @@ const HORDES=[[200,'wolf',30,'Волчья стая'],[330,'crow',26,'Ворон
 var RATE_A=.9,RATE_B=115,RATE_C=1.1e6;
 function spawnLogic(dt){
   if(T>=GOAL)return;
-  const rate=RATE_A+T/RATE_B+T*T/RATE_C;spawnAcc+=rate*dt;
+  const V=VT(),rate=RATE_A+V/RATE_B+V*V/RATE_C;spawnAcc+=rate*dt;
   while(spawnAcc>=1){spawnAcc-=1;if(E.length>=CAP)break;
-    let tot=0;const w=SPAWN.map(([t,from,b])=>{if(T<from)return 0;const x=b*((t==='rag'||t==='wolf')?Math.max(.45,1-T/1800):1);tot+=x;return x});
+    let tot=0;const w=SPAWN.map(([t,from,b])=>{if(V<from)return 0;const x=b*((t==='rag'||t==='wolf')?Math.max(.45,1-V/1800):1);tot+=x;return x});
     let r=RR()*tot,t='rag';for(let i=0;i<SPAWN.length;i++){r-=w[i];if(r<=0){t=SPAWN[i][0];break}}
     spawn(t)}
-  ELITES.forEach((tm,i)=>{if(T>=tm&&!evDone['e'+i]){evDone['e'+i]=1;
+  ELITES.forEach((tm,i)=>{if(V>=tm&&!evDone['e'+i]){evDone['e'+i]=1;
     for(let k=0;k<ELCNT[i];k++)spawn('elite',null,1+.55*i);
     if(i>=2){spawn('plague');spawn('plague');spawn('knight')}
     banner(i===0?'Появляется Палач':i===ELITES.length-1?'Рассвет близко... но ночь не сдастся':'Палачи вернулись. Они крепче');snd('boss')}});
-  HORDES.forEach(([tm,t,n,msg],i)=>{if(T>=tm&&!evDone['w'+i]){evDone['w'+i]=1;banner(msg);
+  HORDES.forEach(([tm,t,n,msg],i)=>{if(V>=tm&&!evDone['w'+i]){evDone['w'+i]=1;banner(msg);
     for(let k=0;k<n&&E.length<CAP+60;k++){const a=k/n*Math.PI*2;spawn(t,[P.x+Math.cos(a)*236,P.y+Math.sin(a)*236])}}});
 }
 function startBoss(){
   evDone.boss=1;
   for(const e of E){if(!e.dead){e.dead=true;blood(e.x,e.y-6,3)}}
   E.length=0;AR.length=0;HZ.length=0;TG.length=0;
-  const b=spawn('boss',ringPos(150));FX.push({k:'ring',r:260,l:.9,m:.9});
+  const b=spawn('boss',ringPos(150));b.hp=b.mhp=ET.boss.hp*BOSSK;FX.push({k:'ring',r:260,l:.9,m:.9});
   banner('ВЛАСТЕЛИН НОЧИ');snd('boss');shake=10}
 function hit(e,d,ang,f){if(e.dead)return;d*=(1-(e.d.armor||0));e.hp-=d*dmgMul();e.fl=.09;
   if(f){f*=e.d.kr;e.kx+=Math.cos(ang)*f;e.ky+=Math.sin(ang)*f}
@@ -485,7 +489,7 @@ function hit(e,d,ang,f){if(e.dead)return;d*=(1-(e.d.armor||0));e.hp-=d*dmgMul();
 function blood(x,y,n){for(let i=0;i<n&&PT.length<320;i++)PT.push({x,y,vx:(RR()-.5)*70,vy:(RR()-.7)*60,l:.35+RR()*.3,c:RR()<.8?'#6a1414':'#8a2020'})}
 function kill(e){e.dead=true;kills++;
   GM.push({x:e.x,y:e.y,v:e.d.xp,k:'x',t:RR()*6});
-  if(RR()<e.d.coin&&e.t!=='elite')GM.push({x:e.x-3,y:e.y+1,v:T>240?2:1,k:'c',t:RR()*6});
+  if(RR()<e.d.coin&&e.t!=='elite')GM.push({x:e.x-3,y:e.y+1,v:VT()>240?2:1,k:'c',t:RR()*6});
   if(e.t!=='elite'&&e.t!=='boss'&&RR()<.02)GM.push({x:e.x+4,y:e.y,v:25,k:'b',t:0});
   if(P.p.fang){const h=.1*P.p.fang;if(P.fb>=h){P.fb-=h;P.hp=Math.min(P.mhp,P.hp+h)}}
   if(e.d.boom){HZ.push({x:e.x,y:e.y,r:24,l:3.5});FX.push({k:'boom',x:e.x,y:e.y,r:24,l:.3,m:.3,g:1})}
@@ -506,7 +510,7 @@ function inputVec(){let x=0,y=0;
 function hurtP(dm){
   const dg=.04*(P.p.cloak||0);if(dg&&RR()<dg){FX.push({k:'ring',r:16,l:.25,m:.25});P.inv=.3;return}
   P.hp-=dm;P.inv=.8;P.hurt=.25;shake=Math.max(shake,3);snd('hurt');blood(P.x,P.y-8,5)}
-const eDmg=e=>Math.max(1,Math.round(e.d.dmg*(e.t==='boss'?1:1+T/700))-(P.p.cuirass||0)-P.arm);
+const eDmg=e=>Math.max(1,Math.round(e.d.dmg*(e.t==='boss'?1:1+VT()/700))-(P.p.cuirass||0)-P.arm);
 function bossAI(e,dt,dx,dy,d){
   const ph=e.hp>e.mhp*.66?1:e.hp>e.mhp*.33?2:3;
   if(ph!==e.ph0){if(e.ph0&&ph>e.ph0){banner(ph===2?'Тьма сгущается':'Властелин в ярости');snd('boss');shake=8}e.ph0=ph}
@@ -545,12 +549,12 @@ function update(dt){
     e.fr+=dt*(dd.fly?14:7);if(Math.abs(dx)>1)e.face=dx<0?1:0;if(e.fl>0)e.fl-=dt;if(e.ct>0)e.ct-=dt;
     if(d<e.r+5&&P.inv<=0){hurtP(eDmg(e));if(dd.ghost)P.slow=1.5}}
   let j=0;for(let i=0;i<E.length;i++)if(!E[i].dead)E[j++]=E[i];E.length=j;
-  for(const a of AR){a.x+=a.vx*dt;a.y+=a.vy*dt;a.l-=dt;if(P.inv<=0&&Math.hypot(a.x-P.x,a.y-(P.y-8))<(a.orb?5:6)){hurtP(a.orb?Math.max(1,a.dm-(P.p.cuirass||0)-P.arm):Math.max(1,Math.round(a.dm*(1+T/700))-(P.p.cuirass||0)-P.arm));a.l=0}}
+  for(const a of AR){a.x+=a.vx*dt;a.y+=a.vy*dt;a.l-=dt;if(P.inv<=0&&Math.hypot(a.x-P.x,a.y-(P.y-8))<(a.orb?5:6)){hurtP(a.orb?Math.max(1,a.dm-(P.p.cuirass||0)-P.arm):Math.max(1,Math.round(a.dm*(1+VT()/700))-(P.p.cuirass||0)-P.arm));a.l=0}}
   AR=AR.filter(a=>a.l>0);
   for(const t of TG){t.t+=dt;if(t.t>=t.dur){t.dead=true;if(Math.hypot(P.x-t.x,P.y-t.y)<t.r&&P.inv<=0)hurtP(Math.max(1,t.dm-(P.p.cuirass||0)-P.arm));
     FX.push({k:'boom',x:t.x,y:t.y,r:t.r,l:.35,m:.35});shake=Math.max(shake,4);snd('boss')}}
   TG=TG.filter(t=>!t.dead);
-  for(const h of HZ){h.l-=dt;if(Math.hypot(P.x-h.x,P.y-h.y)<h.r){P.hp-=(3+T/250)*dt;P.pz=.2}}
+  for(const h of HZ){h.l-=dt;if(Math.hypot(P.x-h.x,P.y-h.y)<h.r){P.hp-=(3+VT()/250)*dt;P.pz=.2}}
   HZ=HZ.filter(h=>h.l>0);
   for(const b of EX){b.t-=dt;if(b.t<=0){b.dead=true;
     for(const e of E)if(!e.dead&&Math.hypot(e.x-b.x,e.y-b.y)<b.r+e.r*.5)hit(e,b.dmg,Math.atan2(e.y-b.y,e.x-b.x),170);
@@ -658,29 +662,29 @@ $('bReroll').onclick=()=>{if(P.rr>0&&st==='level'){P.rr--;choicesNow=choices();r
 function pick(i){const o=choicesNow[i];if(!o||st!=='level')return;
   if(o.t==='w'){P.w[o.k]=(P.w[o.k]||0)+1;if(P.cd[o.k]===undefined)P.cd[o.k]=0}
   else if(o.t==='p'){P.p[o.k]=(P.p[o.k]||0)+1;if(o.k==='cuirass'){P.mhp+=10;P.hp=Math.min(P.mhp,P.hp+10)}}
-  else if(o.t==='e'){P.evo[o.k]=true;SV.evo[EVO[o.k].id]=1;save();banner('Слияние: '+EVO[o.k].n);snd('evo');FX.push({k:'ring',r:90,l:.6,m:.6})}
+  else if(o.t==='e'){P.evo[o.k]=true;if(!FAST)SV.evo[EVO[o.k].id]=1;save();banner('Слияние: '+EVO[o.k].n);snd('evo');FX.push({k:'ring',r:90,l:.6,m:.6})}
   else P.hp=P.mhp;
   $('ovLvl').classList.remove('on');st='play';last=performance.now();
   if(pending>0){pending--;openLevel()}}
 
 /* ---------- flow ---------- */
 function fmt(t){t=Math.floor(t);return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')}
-function bank(win,partial){const bonus=partial?0:(win?300:Math.floor(T/10)),earned=P.coins+bonus;
-  SV.coins+=earned;SV.totalCoins=(SV.totalCoins||0)+earned;SV.best=Math.max(SV.best,Math.floor(T));SV.kills+=kills;SV.maxLvl=Math.max(SV.maxLvl||1,P.lvl);SV.runs++;if(win){SV.wins++;SV.bossKills=(SV.bossKills||0)+1}
+function bank(win,partial){const bonus=partial?0:(FAST?(win?(FAST===5?120:200):Math.floor(T*FK/10)):(win?300:Math.floor(T/10))),earned=P.coins+bonus;
+  SV.coins+=earned;if(FAST){gotGoals=[];save();return earned}SV.totalCoins=(SV.totalCoins||0)+earned;SV.best=Math.max(SV.best,Math.floor(T));SV.kills+=kills;SV.maxLvl=Math.max(SV.maxLvl||1,P.lvl);SV.runs++;if(win){SV.wins++;SV.bossKills=(SV.bossKills||0)+1}
   gotGoals=checkGoals();save();return earned}
-function endGame(win){st='end';musFadeOut();const earned=bank(win,false);reportRun(win,Math.floor(T),P.lvl,kills);
+function endGame(win){st='end';musFadeOut();const earned=bank(win,false);if(!FAST)reportRun(win,Math.floor(T),P.lvl,kills);
   $('endH').textContent=win?'Рассвет':'Дорога забрала ещё одного';
   $('endP').textContent=win?'Властелин Ночи пал, и над горизонтом дрогнул бледный луч. Ты выжил.':'Ты упал в придорожную грязь, и ночь сомкнулась над тобой. На смену тебе придут новые, и кто-то пойдёт по этой дороге снова.';
-  $('endS').textContent='Продержался: '+fmt(T)+' · Убито: '+kills+' · Уровень: '+P.lvl+(gotGoals.length?' · Открыто: '+gotGoals.map(k=>NAMES[k]).join(', '):'');
+  $('endS').textContent=(FAST?'Быстрый режим ('+FAST+' мин): достижения не засчитываются · ':'')+'Продержался: '+fmt(T)+' · Убито: '+kills+' · Уровень: '+P.lvl+(gotGoals.length?' · Открыто: '+gotGoals.map(k=>NAMES[k]).join(', '):'');
   $('endC').innerHTML='+'+earned+'<i class="co"></i> (в сумке: '+SV.coins+')';
   $('ovEnd').classList.add('on');if(win)snd('win')}
-function hideAll(){['ovMenu','ovMeta','ovEnd','ovLvl','ovPause'].forEach(i=>$(i).classList.remove('on'))}
+function hideAll(){['ovMenu','ovMeta','ovEnd','ovLvl','ovPause','ovFast','ovCode'].forEach(i=>$(i).classList.remove('on'))}
 function startGame(){ainit();hideAll();newGame();st='play';musStart();$('bn').classList.remove('on');last=performance.now()}
 function toMenu(){musStop();hideAll();newGame();st='menu';refreshMenu();$('ovMenu').classList.add('on')}
 function refreshMenu(){$('mCoins').innerHTML=SV.coins+'<i class="co"></i> · лучшее время: '+fmt(SV.best)+' · ночей: '+SV.runs+' · рассветов: '+SV.wins;
   const h=HEROES[SV.hero];$('mHero').textContent='Герой: '+h.n+' ('+NAMES[h.w]+')'}
 function setPause(on){if(on&&st==='play'){st='pause';if(mus)mus.pause();$('ovPause').classList.add('on')}else if(!on&&st==='pause'){st='play';if(mus&&mus.src){const p=mus.play();if(p&&p.catch)p.catch(()=>{})}$('ovPause').classList.remove('on');last=performance.now()}}
-$('bPlay').onclick=startGame;$('bAgain').onclick=startGame;$('bResume').onclick=()=>setPause(false);$('bToMenu').onclick=toMenu;
+$('bPlay').onclick=()=>{FAST=0;startGame()};$('bFast').onclick=()=>$('ovFast').classList.add('on');$('bF5').onclick=()=>{FAST=5;startGame()};$('bF10').onclick=()=>{FAST=10;startGame()};$('bFBack').onclick=()=>$('ovFast').classList.remove('on');$('bAgain').onclick=startGame;$('bResume').onclick=()=>setPause(false);$('bToMenu').onclick=toMenu;
 $('bQuit').onclick=()=>{bank(false,true);toMenu()};
 
 /* ---------- meta screens ---------- */
@@ -835,7 +839,7 @@ function frame(now){
   requestAnimationFrame(frame)}
 setView();newGame();refreshMenu();addEventListener('resize',setView);addEventListener('orientationchange',()=>setTimeout(setView,150));
 requestAnimationFrame(frame);
-window.__dbg={endGame,ET,tune(o){if('NEED_A'in o)NEED_A=o.NEED_A;if('NEED_B'in o)NEED_B=o.NEED_B;if('NEED_C'in o)NEED_C=o.NEED_C;if('HP_A'in o)HP_A=o.HP_A;if('HP_B'in o)HP_B=o.HP_B;if('RATE_A'in o)RATE_A=o.RATE_A;if('RATE_B'in o)RATE_B=o.RATE_B;if('RATE_C'in o)RATE_C=o.RATE_C},step(dt,n){for(let i=0;i<n&&st==='play';i++)update(dt)},get:()=>({st,T,kills,hp:P.hp,mhp:P.mhp,lvl:P.lvl,n:E.length,w:P.w,p:P.p,evo:P.evo,coins:P.coins,x:P.x,y:P.y}),
+window.__dbg={setFast(n){FAST=n},endGame,ET,tune(o){if('NEED_A'in o)NEED_A=o.NEED_A;if('NEED_B'in o)NEED_B=o.NEED_B;if('NEED_C'in o)NEED_C=o.NEED_C;if('HP_A'in o)HP_A=o.HP_A;if('HP_B'in o)HP_B=o.HP_B;if('RATE_A'in o)RATE_A=o.RATE_A;if('RATE_B'in o)RATE_B=o.RATE_B;if('RATE_C'in o)RATE_C=o.RATE_C},step(dt,n){for(let i=0;i<n&&st==='play';i++)update(dt)},get:()=>({st,T,kills,hp:P.hp,mhp:P.mhp,lvl:P.lvl,n:E.length,w:P.w,p:P.p,evo:P.evo,coins:P.coins,x:P.x,y:P.y}),
   setVec(v){dbgVec=v},E:()=>E,P:()=>P,SV,pick,choices:()=>choicesNow,start:startGame,menu:toMenu,openMeta,openLevel,save,set(k,v){if(k==='T')T=v},bankIt:()=>bank,mus:()=>mus?{src:mus.src.split('/').pop(),t:mus.currentTime,d:mus.duration,paused:mus.paused,muted:mus.muted,vol:mus.volume}:null,musNext,seekEnd:()=>{if(mus&&isFinite(mus.duration))mus.currentTime=Math.max(0,mus.duration-.6)}};
 })();
 </script>
