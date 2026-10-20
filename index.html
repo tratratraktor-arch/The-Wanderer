@@ -240,7 +240,7 @@ function snd(k){if(!ac)return;const now=performance.now();if(lastS[k]&&now-lastS
   case'boss':tone(90,40,1.1,'sawtooth',.2);break;case'win':[0,2,4,7].forEach((s,i)=>setTimeout(()=>tone(330*Math.pow(2,s/7),330*Math.pow(2,s/7),.5,'triangle',.12),i*220));break}}
 $('mute').onclick=e=>{e.stopPropagation();snOn=!snOn;if(mg)mg.gain.value=snOn?.6:0;if(mus)mus.muted=!snOn;e.target.textContent='звук: '+(snOn?'вкл':'выкл')};
 /* ---------- music: gameplay playlist, fully shuffled ---------- */
-const MUSIC={game:['music/midnight-witch-hunt.mp3','music/friedhofsbewohner-1.mp3','music/forgotten-ruin.mp3','music/um-mitternacht.mp3']};
+const MUSIC={game:['midnight-witch-hunt.mp3','friedhofsbewohner-1.mp3','forgotten-ruin.mp3','um-mitternacht.mp3']};
 const MVOL=.55;
 let mus=null,mQueue=[],mLast=null,mErr=0,mFade=null;
 function musNext(){
