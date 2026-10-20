@@ -140,9 +140,26 @@ const cv=$('c'),g=cv.getContext('2d');g.imageSmoothingEnabled=false;
 
 /* ---------- save ---------- */
 const SKEY='aeu_save_v1';
-const SV={coins:0,up:{},unl:{},heroes:{recruit:1},hero:'recruit',best:0,kills:0,wins:0,runs:0,evo:{},totalCoins:0,elites:0,maxLvl:1,bossKills:0};
+const SV={coins:0,up:{},unl:{},heroes:{recruit:1},hero:'recruit',best:0,kills:0,wins:0,runs:0,evo:{},totalCoins:0,elites:0,maxLvl:1,bossKills:0,ts:0};
 (function(){try{const s=localStorage.getItem(SKEY);if(s){const o=JSON.parse(s);for(const k in o)if(k in SV)SV[k]=o[k]}}catch(e){}})();
-function save(){try{localStorage.setItem(SKEY,JSON.stringify(SV))}catch(e){}}
+const API_URL='https://sunguard-leviathan.duckdns.org';
+let cloudT=0;
+function cloudOK(){try{return !!(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initData&&Telegram.WebApp.CloudStorage&&Telegram.WebApp.isVersionAtLeast('6.9'))}catch(e){return false}}
+function save(){SV.ts=Date.now();try{localStorage.setItem(SKEY,JSON.stringify(SV))}catch(e){}
+  if(cloudOK()){clearTimeout(cloudT);cloudT=setTimeout(cloudPush,800)}}
+function cloudPush(){try{const str=JSON.stringify(SV),n=Math.ceil(str.length/3000),C=Telegram.WebApp.CloudStorage;
+  for(let i=0;i<n;i++)C.setItem('sv'+i,str.slice(i*3000,(i+1)*3000));C.setItem('svn',String(n))}catch(e){}}
+function cloudLoad(){if(!cloudOK())return;try{const C=Telegram.WebApp.CloudStorage;
+  C.getItem('svn',(er,v)=>{const n=parseInt(v)||0;if(er||!n||n>20){cloudPush();return}
+    const keys=[];for(let i=0;i<n;i++)keys.push('sv'+i);
+    C.getItems(keys,(e2,o)=>{if(e2||!o)return;let str='';for(const k of keys)str+=(o[k]||'');
+      try{const c=JSON.parse(str);if((c.ts||0)>(SV.ts||0)){for(const k in c)if(k in SV)SV[k]=c[k];try{localStorage.setItem(SKEY,JSON.stringify(SV))}catch(e){}if(st==='menu')refreshMenu()}
+        else if((c.ts||0)<(SV.ts||0))cloudPush()}catch(e){}})})}catch(e){}}
+setTimeout(cloudLoad,300);
+function reportRun(win,t,lvl,k){try{if(!API_URL||!window.Telegram||!Telegram.WebApp||!Telegram.WebApp.initData)return;
+  fetch(API_URL+'/api/game/run',{method:'POST',headers:{'Content-Type':'application/json'},keepalive:true,
+    body:JSON.stringify({initData:Telegram.WebApp.initData,t:t,lvl:lvl,kills:k,win:!!win})}).then(r=>r.json()).then(j=>{
+      if(j&&j.achievements&&j.achievements.length){const el=document.getElementById('endS');if(el)el.textContent+=' · Достижение в боте: '+j.achievements.join(', ')}}).catch(()=>{})}catch(e){}}
 
 /* ---------- utils ---------- */
 let rs=12345;const rnd=()=>{rs=(rs*16807)%2147483647;return rs/2147483647};
@@ -633,7 +650,7 @@ function fmt(t){t=Math.floor(t);return String(Math.floor(t/60)).padStart(2,'0')+
 function bank(win,partial){const bonus=partial?0:(win?300:Math.floor(T/10)),earned=P.coins+bonus;
   SV.coins+=earned;SV.totalCoins=(SV.totalCoins||0)+earned;SV.best=Math.max(SV.best,Math.floor(T));SV.kills+=kills;SV.maxLvl=Math.max(SV.maxLvl||1,P.lvl);SV.runs++;if(win){SV.wins++;SV.bossKills=(SV.bossKills||0)+1}
   gotGoals=checkGoals();save();return earned}
-function endGame(win){st='end';musFadeOut();const earned=bank(win,false);
+function endGame(win){st='end';musFadeOut();const earned=bank(win,false);reportRun(win,Math.floor(T),P.lvl,kills);
   $('endH').textContent=win?'Рассвет':'Дорога забрала ещё одного';
   $('endP').textContent=win?'Властелин Ночи пал, и над горизонтом дрогнул бледный луч. Ты выжил.':'Ты упал в придорожную грязь, и ночь сомкнулась над тобой. На смену тебе придут новые, и кто-то пойдёт по этой дороге снова.';
   $('endS').textContent='Продержался: '+fmt(T)+' · Убито: '+kills+' · Уровень: '+P.lvl+(gotGoals.length?' · Открыто: '+gotGoals.map(k=>NAMES[k]).join(', '):'');
