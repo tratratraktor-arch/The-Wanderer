@@ -28,6 +28,9 @@ canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 #xpf{display:block;height:100%;width:0;background:linear-gradient(#e8c04a,#8a6a1e)}
 #bn{left:0;right:0;top:24%;text-align:center;font-size:max(16px,4cqw);color:#e0c070;opacity:0;transition:opacity .6s;letter-spacing:.3em}
 #bn.on{opacity:1}
+#ovCode{background:rgba(5,4,7,.98);z-index:70}
+#cIn{width:100%;font:600 22px 'Cormorant SC',serif;letter-spacing:.1em;text-align:center;color:var(--parch);background:#16131a;border:3px solid var(--edge);padding:10px;margin:8px 0;box-sizing:border-box}
+#bBird{position:fixed;top:10px;right:12px;z-index:60;background:none;border:0;color:#a8998a;opacity:.45;cursor:pointer;padding:6px}#bBird:hover{opacity:.9}
 #bossb{left:18%;right:18%;top:calc(1cqw + max(18px,4.4cqw) + 1.6cqw);height:max(10px,2.2cqw);background:#120c0c;border:max(2px,.3cqw) solid var(--edge);display:none}#bossb.on{display:block}#bossf{display:block;height:100%;width:100%;background:linear-gradient(#a03aff,#4a1a8a)}#bosst{position:absolute;inset:0;text-align:center;font-size:max(8px,1.6cqw);line-height:max(10px,2.2cqw);color:#f0e0ff;letter-spacing:.2em}
 #stage.nohud .hud,#stage.nohud #mute{visibility:hidden}
 #mute{position:absolute;right:2cqw;bottom:max(10px,2.4cqw);background:rgba(10,8,12,.7);color:var(--parch);border:1px solid var(--edge);font:inherit;font-size:max(10px,1.8cqw);padding:.3em .7em;cursor:pointer}
@@ -87,7 +90,7 @@ canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 </div>
 </div>
 
-<div class="ov on" id="ovMenu"><div class="in">
+<div class="ov on" id="ovMenu"><button id="bBird" type="button" aria-label="Тайное слово"></button><div class="in">
 <h1>The Wanderer</h1>
 <div class="sub">Дорога до рассвета</div>
 <p>Ты солдат Левиафана, твоя задача - искоренить всю нечисть вокруг Вольмстада, отправляйся в экспедицию и сразись с ордами монстров! Продержись 20 минут, а потом сразись с Властелином Ночи.</p>
@@ -102,6 +105,7 @@ canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 <p class="hint">Движение: WASD или стрелки (на телефоне — перетаскивание по экрану). Оружие бьёт само. На каждом уровне выбирай усиление: 1 / 2 / 3 или клик. Пауза: Esc. Прогресс хранится в этом браузере.</p>
 </div></div>
 
+<div class="ov" id="ovCode"><div class="in"><h2>Тайное слово</h2><p>Введи код, чтобы получить награду в боте.</p><input id="cIn" type="text" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false"><p class="hint" id="cMsg"></p><div class="menu"><button class="btn" id="cOk" type="button">Подтвердить</button><button class="btn" id="cBack" type="button">Назад</button></div></div></div>
 <div class="ov" id="ovMeta"><div class="in">
 <div class="mh"><h2 id="metaT"></h2><div class="coins" id="metaC"></div><button class="btn sm" id="bBack" type="button">Назад</button></div>
 <div class="tabs" id="tabs"></div>
@@ -161,6 +165,20 @@ function reportRun(win,t,lvl,k){try{if(!API_URL||!window.Telegram||!Telegram.Web
     body:JSON.stringify({initData:Telegram.WebApp.initData,t:t,lvl:lvl,kills:k,win:!!win})}).then(r=>r.json()).then(j=>{
       if(j&&j.achievements&&j.achievements.length){const el=document.getElementById('endS');if(el)el.textContent+=' · Достижение в боте: '+j.achievements.join(', ')}}).catch(()=>{})}catch(e){}}
 
+/* ---------- secret code ---------- */
+(function(){const bird=['...####.....','..######....','.#.#####....','##.#######..','.#########..','..#########.','...########.','....######..','.....#..#...','.....#..#...'];
+  let r='';bird.forEach((row,y)=>{for(let x=0;x<row.length;x++)if(row[x]==='#')r+='<rect x="'+x+'" y="'+y+'" width="1" height="1"/>'});
+  $('bBird').innerHTML='<svg viewBox="0 0 12 10" width="26" height="22" fill="currentColor" shape-rendering="crispEdges">'+r+'</svg>';
+  $('bBird').onclick=()=>{$('cMsg').textContent='';$('cIn').value='';$('ovCode').classList.add('on');setTimeout(()=>$('cIn').focus(),50)};
+  $('cBack').onclick=()=>$('ovCode').classList.remove('on');
+  let busy=false;
+  function send(){if(busy)return;const code=$('cIn').value.trim();if(!code)return;
+    if(!window.Telegram||!Telegram.WebApp||!Telegram.WebApp.initData){$('cMsg').textContent='Код работает только в игре из Telegram-бота.';return}
+    busy=true;$('cMsg').textContent='Проверяю...';
+    fetch(API_URL+'/api/game/code',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:Telegram.WebApp.initData,code:code})})
+      .then(r=>r.json()).then(j=>{busy=false;$('cMsg').textContent=j&&j.ok?(j.msg||'Готово!'):((j&&j.msg)||'Неверный код.');if(j&&j.ok)$('cIn').value=''})
+      .catch(()=>{busy=false;$('cMsg').textContent='Нет связи с сервером. Попробуй позже.'})}
+  $('cOk').onclick=send;$('cIn').addEventListener('keydown',e=>{if(e.key==='Enter')send()})})();
 /* ---------- utils ---------- */
 let rs=12345;const rnd=()=>{rs=(rs*16807)%2147483647;return rs/2147483647};
 const RR=Math.random;
