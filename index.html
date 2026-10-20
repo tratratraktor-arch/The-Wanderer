@@ -290,7 +290,7 @@ function musFadeOut(){if(!mus||mFade)return;mFade=setInterval(()=>{if(!mus){clea
 
 /* ---------- data ---------- */
 const NAMES={sword:'Меч Люмос',crossbow:'Арбалет',lantern:'Фонарь',oil:'Горящее масло',knives:'Метательные ножи',censer:'Кадило',
-  spear:'Копьё стражи',thunder:'Жезл бури',bomb:'Пороховая бочка',
+  spear:'Копьё стражи',thunder:'Жезл бури',bomb:'Пороховая бочка',frost:'Ледяной посох',axe:'Секира-бумеранг',
   boots:'Сапоги дозорного',cuirass:'Кираса',amulet:'Знак Солнца',herbs:'Целебные травы',whetstone:'Точило',ring:'Кольцо Левиафана',charm:'Оберег Мракоборца',
   cloak:'Плащ странника',fang:'Клык упыря',book:'Книга Левиафана'};
 const INTRO={
@@ -298,12 +298,13 @@ const INTRO={
  lantern:'Жжёт всех, кто подошёл вплотную, и освещает дорогу.',oil:'Бросок горящего масла в гущу врагов.',
  knives:'Нож летит туда, куда ты идёшь.',censer:'Тяжёлое кадило вращается вокруг тебя.',
  spear:'Колющий выпад: пробивает всех врагов на линии удара.',thunder:'Молния бьёт случайного врага поблизости и всё вокруг него.',
- bomb:'Бочка с порохом летит во врагов и взрывается спустя мгновение.'};
+ bomb:'Бочка с порохом летит во врагов и взрывается спустя мгновение.',
+ frost:'Ледяная волна вокруг тебя ранит и надолго замедляет врагов.',axe:'Секира летит вперёд, возвращается и рубит всех на пути.'};
 const PTXT={boots:'Скорость +5%',cuirass:'+10 здоровья, каждый удар слабее на 1',amulet:'Свет шире (+8), осколки притягиваются издалека',
  herbs:'Здоровье восстанавливается быстрее (+0.22 в секунду)',whetstone:'Весь урон +7%',ring:'Оружие перезаряжается на 4% быстрее',
  charm:'Область действия оружия +5%',cloak:'Шанс уклониться от удара +4%',fang:'Каждый убитый враг лечит тебя немного',book:'Получаемый опыт +6%'};
 const WMAX=8,PMAX=8,SLOTW=4,SLOTP=5,EVO_NEED=3;
-const ALLW=['sword','crossbow','lantern','oil','knives','censer','spear','thunder','bomb'],
+const ALLW=['sword','crossbow','lantern','oil','knives','censer','spear','thunder','bomb','frost','axe'],
       ALLP=['boots','cuirass','amulet','herbs','whetstone','ring','charm','cloak','fang','book'];
 const BASEW=['sword','crossbow','lantern'],BASEP=['boots','cuirass','amulet','herbs','whetstone'];
 const EVO={
@@ -315,18 +316,20 @@ const EVO={
  censer:{pass:'herbs',id:'holycenser',n:'Кадило Исцеления',d:'Четыре тяжёлых кадила, каждый удар немного лечит.'},
  spear:{pass:'cloak',id:'lance',n:'Пика Рассвета',d:'Длинный выпад вперёд и назад, пробивает всё на линии.'},
  thunder:{pass:'book',id:'wrath',n:'Гнев небес',d:'Шесть молний за раз, каждая с огромным радиусом.'},
- bomb:{pass:'fang',id:'doom',n:'Бочка Страшного суда',d:'Четыре громадных взрыва подряд.'}};
+ bomb:{pass:'fang',id:'doom',n:'Бочка Страшного суда',d:'Четыре громадных взрыва подряд.'},
+ frost:{pass:'cuirass',id:'permafrost',n:'Вечная мерзлота',d:'Огромная волна холода, замораживает почти намертво.'},
+ axe:{pass:'whetstone',id:'reaper',n:'Секира Палача',d:'Три огромные секиры летят дальше и бьют втрое сильнее.'}};
 const SHOP=[
- {k:'hp',n:'Крепкое здоровье',d:'+10 к максимуму здоровья',max:5,base:60,f:1.5},
- {k:'pow',n:'Закалка',d:'+5% к урону',max:5,base:80,f:1.55},
- {k:'spd',n:'Лёгкая поступь',d:'+4% к скорости',max:4,base:70,f:1.5},
- {k:'oil',n:'Масло для фонаря',d:'+7 к радиусу света',max:5,base:50,f:1.5},
- {k:'arm',n:'Стёганка',d:'Каждый удар слабее на 1',max:3,base:150,f:1.8},
- {k:'reg',n:'Походная аптечка',d:'+0.25 здоровья в секунду',max:3,base:120,f:1.7},
- {k:'gold',n:'Чутьё на золото',d:'+15% монет',max:5,base:90,f:1.5},
- {k:'xp',n:'Опыт дороги',d:'+8% опыта',max:5,base:90,f:1.5},
- {k:'rr',n:'Второе мнение',d:'+1 пересмотр выбора за ночь',max:3,base:120,f:1.8},
- {k:'rev',n:'Медальон Наттрамна',d:'Один раз за ночь встать после смерти',max:1,base:600,f:1}];
+ {k:'hp',n:'Крепкое здоровье',d:'+10 к максимуму здоровья',max:5,base:100,f:1.6},
+ {k:'pow',n:'Закалка',d:'+5% к урону',max:5,base:140,f:1.7},
+ {k:'spd',n:'Лёгкая поступь',d:'+4% к скорости',max:4,base:120,f:1.6},
+ {k:'oil',n:'Масло для фонаря',d:'+7 к радиусу света',max:5,base:90,f:1.6},
+ {k:'arm',n:'Стёганка',d:'Каждый удар слабее на 1',max:3,base:260,f:1.9},
+ {k:'reg',n:'Походная аптечка',d:'+0.25 здоровья в секунду',max:3,base:220,f:1.8},
+ {k:'gold',n:'Чутьё на золото',d:'+15% монет',max:5,base:160,f:1.65},
+ {k:'xp',n:'Опыт дороги',d:'+8% опыта',max:5,base:160,f:1.65},
+ {k:'rr',n:'Второе мнение',d:'+1 пересмотр выбора за ночь',max:3,base:220,f:1.9},
+ {k:'rev',n:'Медальон Наттрамна',d:'Один раз за ночь встать после смерти',max:1,base:2200,f:1}];
 const UNL=[{k:'oil',c:150},{k:'knives',c:250},{k:'censer',c:350},{k:'ring',c:200},{k:'charm',c:200}];
 /* цели: предмет открывается сам, когда цель выполнена */
 const GOALS={
@@ -335,6 +338,8 @@ const GOALS={
  bomb:{t:'Победить 3 Палачей',cur:()=>SV.elites||0,max:3},
  cloak:{t:'Достичь 15 уровня за одну ночь',cur:()=>SV.maxLvl||1,max:15},
  fang:{t:'Убить 2000 врагов за всё время',cur:()=>SV.kills,max:2000},
+ frost:{t:'Продержаться 15:00 за одну ночь',cur:()=>SV.best,max:900,time:true},
+ axe:{t:'Победить 6 Палачей',cur:()=>SV.elites||0,max:6},
  book:{t:'Собрать 1000 монет за всё время',cur:()=>SV.totalCoins||0,max:1000}};
 function checkGoals(){const got=[];for(const k in GOALS){const q=GOALS[k];if(!SV.unl[k]&&q.cur()>=q.max){SV.unl[k]=1;got.push(k)}}if(got.length)save();return got}
 const HEROES={
@@ -359,7 +364,7 @@ const ET={
  boss:{hp:BOSSHP,spd:20,r:14,dmg:28,xp:0,sp:'boss',eye:'#ff2a1a',ey:.74,kr:0,scale:2,coin:0}};
 
 /* ---------- state ---------- */
-let st='menu',T=0,P,E,GM,BL,PD,FL,PT,FX,AR,HZ,TG,EX,kills,shake=0,spawnAcc=0,evDone,bnT=0,nextId=1,pending=0,last=performance.now(),invKey='',bossDead=false,gotGoals=[];
+let st='menu',T=0,P,E,GM,BL,PD,FL,PT,FX,AR,HZ,TG,EX,AX=[],kills,shake=0,spawnAcc=0,evDone,bnT=0,nextId=1,pending=0,last=performance.now(),invKey='',bossDead=false,gotGoals=[];
 const keys={};let joy=null,dbgVec=null,choicesNow=[];
 const upl=k=>SV.up[k]||0;
 const CAP=300;
@@ -370,7 +375,7 @@ function newGame(){
      spd:1+.04*upl('spd')+(m.spd||0),pow:1+.05*upl('pow')+(m.pow||0),lightB:7*upl('oil')+(m.light||0),arm:upl('arm')+(m.arm||0),reg:.25*upl('reg')+(m.reg||0),
      gold:1+.15*upl('gold'),xpm:1+.08*upl('xp'),rr:upl('rr'),rev:upl('rev'),coins:0,coinsF:0,hero:SV.hero,heal:0,slow:0,fb:6,pz:0};
   P.hp=P.mhp;P.w[he.w]=1;P.cd[he.w]=0;
-  E=[];GM=[];BL=[];PD=[];FL=[];PT=[];FX=[];AR=[];HZ=[];TG=[];EX=[];
+  E=[];GM=[];BL=[];PD=[];FL=[];PT=[];FX=[];AR=[];HZ=[];TG=[];EX=[];AX=[];
   for(let i=0;i<6;i++)spawn('rag');for(let i=0;i<4;i++)spawn('wolf');
 }
 function need(l){return Math.floor(NEED_A+l*NEED_B+l*l*NEED_C)}
@@ -390,9 +395,11 @@ function ceS(l,e){if(e)return{n:4,R:56,dmg:16,sp:3.2,heal:true};return{n:NI[l-1]
 function spS(l,e){if(e)return{dmg:60,L:110,w:12,cd:.55,back:true};return{dmg:20+4*(l-1),L:46+4*(l-1),w:9+(l>=5?3:0),cd:1.1-.06*(l-1),back:l>=4}}
 function thS(l,e){if(e)return{k:6,r:30,dmg:50,cd:1.2,range:150};return{k:[1,1,2,2,3,3,4,4][l-1],r:14+1.5*(l-1),dmg:18+4*(l-1),cd:1.9-.1*(l-1),range:130}}
 function bmS(l,e){if(e)return{n:4,r:56,dmg:90,fuse:.9,cd:3};return{n:[1,1,1,2,2,2,3,3][l-1],r:34+3*(l-1),dmg:32+7*(l-1),fuse:1.2,cd:4.4-.2*(l-1)}}
-const SHEET={sword:swS,crossbow:xbS,lantern:lnS,oil:olS,knives:knS,censer:ceS,spear:spS,thunder:thS,bomb:bmS};
+function frS(l,e){if(e)return{r:92,dmg:55,frz:3.6,cd:1.7};return{r:40+4*(l-1),dmg:14+3.5*(l-1),frz:1.4+.2*(l-1),cd:3.6-.2*(l-1)}}
+function axS(l,e){if(e)return{n:3,D:125,dmg:62,r:12,cd:1.9};return{n:[1,1,1,2,2,2,3,3][l-1],D:70+6*(l-1),dmg:24+5*(l-1),r:8+.6*(l-1),cd:2.6-.1*(l-1)}}
+const SHEET={sword:swS,crossbow:xbS,lantern:lnS,oil:olS,knives:knS,censer:ceS,spear:spS,thunder:thS,bomb:bmS,frost:frS,axe:axS};
 const LBL={dmg:['Урон',0],r:['Радиус',0],R:['Орбита',0],cd:['Перезарядка',2,'с'],n:['Количество',0],k:['Молний',0],pierce:['Пробивание',0],light:['Свет',0],
-  tick:['Интервал',2,'с'],sp:['Скорость',1],dur:['Горение',1,'с'],L:['Длина',0],w:['Ширина',0],fuse:['Запал',1,'с'],range:['Дальность',0]};
+  tick:['Интервал',2,'с'],sp:['Скорость',1],dur:['Горение',1,'с'],L:['Длина',0],w:['Ширина',0],fuse:['Запал',1,'с'],range:['Дальность',0],frz:['Заморозка',1,'с'],D:['Дальность',0]};
 function descW(k,cur){
   if(!cur)return INTRO[k];
   const a=SHEET[k](cur),b=SHEET[k](cur+1),out=[];
@@ -498,7 +505,8 @@ function update(dt){
       else if(e.st===1){vx=0;vy=0;e.wind-=dt;if(e.wind<=0){e.st=2;e.wind=.7}}
       else{vx=e.dx*190;vy=e.dy*190;e.wind-=dt;if(e.wind<=0){e.st=0;e.cd=3+RR()*2}}}
     if(e.t==='boss'){[vx,vy]=bossAI(e,dt,dx,dy,d)}
-    e.x+=(vx+e.kx)*dt;e.y+=(vy+e.ky)*dt;e.kx*=Math.max(0,1-9*dt);e.ky*=Math.max(0,1-9*dt);
+    let fz=1;if(e.frz>0){e.frz-=dt;fz=e.t==='boss'?.75:.4}
+    e.x+=(vx*fz+e.kx)*dt;e.y+=(vy*fz+e.ky)*dt;e.kx*=Math.max(0,1-9*dt);e.ky*=Math.max(0,1-9*dt);
     e.fr+=dt*(dd.fly?14:7);if(Math.abs(dx)>1)e.face=dx<0?1:0;if(e.fl>0)e.fl-=dt;if(e.ct>0)e.ct-=dt;
     if(d<e.r+5&&P.inv<=0){hurtP(eDmg(e));if(dd.ghost)P.slow=1.5}}
   let j=0;for(let i=0;i<E.length;i++)if(!E[i].dead)E[j++]=E[i];E.length=j;
@@ -576,6 +584,17 @@ function weapons(dt){
         for(let i=0;i<s.k&&pool.length;i++){const e=pool.splice((RR()*pool.length)|0,1)[0];FX.push({k:'bolt',x:e.x,y:e.y,r:R,l:.25,m:.25});
           for(const o of E)if(!o.dead&&Math.hypot(o.x-e.x,o.y-e.y)<R+o.r*.5)hit(o,s.dmg,Math.atan2(o.y-e.y,o.x-e.x),40)}
         snd('boss');P.cd.thunder=s.cd*cdMul()}else P.cd.thunder=0}}
+  if(P.w.frost){const s=frS(P.w.frost,P.evo.frost);P.cd.frost-=dt;
+    if(P.cd.frost<=0){const R=s.r*areaMul();let any=false;
+      for(const e of E){if(e.dead)continue;if(Math.hypot(e.x-P.x,e.y-P.y)<R+e.r){any=true;e.frz=s.frz;hit(e,s.dmg,Math.atan2(e.y-P.y,e.x-P.x),20)}}
+      FX.push({k:'boom',x:P.x,y:P.y-6,r:R,l:.45,m:.45,i:1});snd('bolt');P.cd.frost=s.cd*cdMul()}}
+  if(P.w.axe){const s=axS(P.w.axe,P.evo.axe);P.cd.axe-=dt;
+    if(P.cd.axe<=0){const n0=nearest(s.D*areaMul()+40)||nearest(260);
+      if(n0){const a0=Math.atan2(n0.y-P.y,n0.x-P.x);for(let i=0;i<s.n;i++){const a=a0+(i-(s.n-1)/2)*.5;AX.push({a,u:0,dur:1.15,D:s.D*areaMul(),dmg:s.dmg,r:s.r,h:new Set()})}snd('throw');P.cd.axe=s.cd*cdMul()}else P.cd.axe=0}}
+  for(const q of AX){q.u+=dt/q.dur;if(q.u>=.5&&!q.mid){q.mid=1;q.h=new Set()}
+    const k=Math.sin(Math.PI*Math.min(1,q.u));q.x=P.x+Math.cos(q.a)*q.D*k;q.y=P.y-6+Math.sin(q.a)*q.D*k*.9;
+    for(const e of E){if(e.dead||q.h.has(e.id))continue;if(Math.hypot(e.x-q.x,(e.y-5)-q.y)<q.r+e.r){q.h.add(e.id);hit(e,q.dmg,Math.atan2(e.y-q.y,e.x-q.x),50)}}}
+  AX=AX.filter(q=>q.u<1);
   if(P.w.bomb){const s=bmS(P.w.bomb,P.evo.bomb);P.cd.bomb-=dt;
     if(P.cd.bomb<=0){const pool=E.filter(e=>!e.dead&&Math.hypot(e.x-P.x,e.y-P.y)<160);
       if(pool.length){for(let i=0;i<s.n;i++){const e=pool[(RR()*pool.length)|0];FL.push({bomb:1,sx:P.x,sy:P.y-8,tx:e.x+(RR()-.5)*16,ty:e.y+(RR()-.5)*12,t:-i*.15,dur:.55,r:s.r*areaMul(),dmg:s.dmg,fuse:s.fuse})}snd('throw');P.cd.bomb=s.cd*cdMul()}else P.cd.bomb=0}}
@@ -728,6 +747,7 @@ function draw(){
   for(const f of FL){if(f.t<0)continue;const k=f.t/f.dur,X=Math.round(f.sx+(f.tx-f.sx)*k-cx),Y=Math.round(f.sy+(f.ty-f.sy)*k-Math.sin(k*Math.PI)*34-cy);
     if(f.bomb){g.fillStyle='#6a4a2a';g.fillRect(X-3,Y-3,6,6);g.fillStyle='#3a2a18';g.fillRect(X-3,Y-1,6,1);g.fillStyle='#ffd060';g.fillRect(X+1,Y-6,2,3)}
     else{g.fillStyle='#5a3a1a';g.fillRect(X-2,Y-2,4,4);g.fillStyle='#ffb040';g.fillRect(X-1,Y-4,2,2)}}
+  for(const q of AX){const X=Math.round(q.x-cx),Y=Math.round(q.y-cy);g.save();g.translate(X,Y);g.rotate(T*16);g.fillStyle='#6a4a2a';g.fillRect(-1,-6,2,12);g.fillStyle='#c8ccd6';g.fillRect(-6,-6,6,4);g.fillRect(0,2,6,4);g.fillStyle='#f0f4ff';g.fillRect(-6,-6,6,1);g.fillRect(0,2,6,1);g.restore()}
   if(P.w.censer&&P.cpos){const px=Math.round(P.x-cx),py=Math.round(P.y-cy-6);for(const c of P.cpos){const X=Math.round(c[0]-cx),Y=Math.round(c[1]-cy);
     g.strokeStyle='rgba(120,100,70,.7)';g.lineWidth=1;g.beginPath();g.moveTo(px,py);g.lineTo(X,Y);g.stroke();
     g.fillStyle='#4a3a28';g.fillRect(X-3,Y-3,6,6);g.fillStyle='#8a6a3a';g.fillRect(X-3,Y-3,6,1);g.fillStyle='#e8842a';g.fillRect(X-1,Y-1,2,2);
@@ -739,7 +759,7 @@ function draw(){
     else if(f.k==='thrust'){g.save();g.translate(Math.round(P.x-cx),Math.round(P.y-cy-6));g.rotate(f.a);g.fillStyle='rgba(235,240,255,'+k*.85+')';g.beginPath();g.moveTo(4,-f.w*.5);g.lineTo(f.r,0);g.lineTo(4,f.w*.5);g.closePath();g.fill();g.restore()}
     else if(f.k==='bolt'){const X=Math.round(f.x-cx),Y=Math.round(f.y-cy);g.fillStyle='rgba(170,210,255,'+.35*k+')';g.beginPath();g.arc(X,Y,f.r,0,7);g.fill();
       for(const[c,w]of[['rgba(150,200,255,'+k+')',4],['rgba(255,255,255,'+k+')',2]]){g.strokeStyle=c;g.lineWidth=w;g.beginPath();g.moveTo(X,Y-150);for(let i=1;i<7;i++)g.lineTo(X+((hash(i,(f.x|0))%14)-7),Y-150+i*22);g.lineTo(X,Y);g.stroke()}}
-    else if(f.k==='boom'){const X=Math.round(f.x-cx),Y=Math.round(f.y-cy),r=f.r*(1.15-k*.25);g.fillStyle=(f.g?'rgba(120,220,60,':'rgba(255,170,70,')+.5*k+')';g.beginPath();g.arc(X,Y,r,0,7);g.fill();g.strokeStyle='rgba(255,240,200,'+k+')';g.lineWidth=2;g.beginPath();g.arc(X,Y,r,0,7);g.stroke()}}
+    else if(f.k==='boom'){const X=Math.round(f.x-cx),Y=Math.round(f.y-cy),r=f.r*(1.15-k*.25);g.fillStyle=(f.g?'rgba(120,220,60,':f.i?'rgba(150,215,255,':'rgba(255,170,70,')+.5*k+')';g.beginPath();g.arc(X,Y,r,0,7);g.fill();g.strokeStyle='rgba(255,240,200,'+k+')';g.lineWidth=2;g.beginPath();g.arc(X,Y,r,0,7);g.stroke()}}
   for(const p of PT){g.fillStyle=p.c;g.fillRect(Math.round(p.x-cx),Math.round(p.y-cy),2,2)}
   /* darkness */
   dg.globalCompositeOperation='source-over';dg.clearRect(0,0,W,H);dg.fillStyle='rgba(4,3,8,.93)';dg.fillRect(0,0,W,H);
