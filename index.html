@@ -31,6 +31,10 @@ canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 #ovCode,#ovFast{background:rgba(5,4,7,.98);z-index:70}
 #cIn{width:100%;font:600 22px 'Cormorant SC',serif;letter-spacing:.1em;text-align:center;color:var(--parch);background:#16131a;border:3px solid var(--edge);padding:10px;margin:8px 0;box-sizing:border-box}
 #bBird{position:fixed;top:10px;right:12px;z-index:60;background:none;border:0;color:#a8998a;opacity:.45;cursor:pointer;padding:6px}#bBird:hover{opacity:.9}
+#ovTop{background:rgba(5,4,7,.98);z-index:70}
+#topList{width:100%;margin:8px 0;text-align:left}
+.tr{display:flex;gap:8px;align-items:baseline;padding:6px 8px;border-bottom:1px solid rgba(140,130,110,.25);font:600 18px 'Cormorant SC',serif;color:var(--parch)}
+.tr b{width:1.6em;color:#c9a23a}.tr span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tr i{font-style:normal;color:#a8998a;font-size:15px;white-space:nowrap}
 #bossb{left:18%;right:18%;top:calc(1cqw + max(18px,4.4cqw) + 1.6cqw);height:max(10px,2.2cqw);background:#120c0c;border:max(2px,.3cqw) solid var(--edge);display:none}#bossb.on{display:block}#bossf{display:block;height:100%;width:100%;background:linear-gradient(#a03aff,#4a1a8a)}#bosst{position:absolute;inset:0;text-align:center;font-size:max(8px,1.6cqw);line-height:max(10px,2.2cqw);color:#f0e0ff;letter-spacing:.2em}
 #stage.nohud .hud,#stage.nohud #mute{visibility:hidden}
 #mute{position:absolute;right:2cqw;bottom:max(10px,2.4cqw);background:rgba(10,8,12,.7);color:var(--parch);border:1px solid var(--edge);font:inherit;font-size:max(10px,1.8cqw);padding:.3em .7em;cursor:pointer}
@@ -101,12 +105,15 @@ canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 <button class="btn" id="bShop" type="button">Лавка</button>
 <button class="btn" id="bHeroes" type="button">Герои</button>
 <button class="btn" id="bBook" type="button">Книга слияний</button>
+<button class="btn" id="bTop" type="button">Рейтинг</button>
 </div>
 <p class="hint" id="mHero"></p>
+<p class="hint" id="mVer" style="opacity:.55;margin-top:4px"></p>
 <p class="hint">Движение: WASD или стрелки (на телефоне — перетаскивание по экрану). Оружие бьёт само. На каждом уровне выбирай усиление: 1 / 2 / 3 или клик. Пауза: Esc. Прогресс хранится в этом браузере.</p>
 </div></div>
 
 <div class="ov" id="ovFast"><div class="in"><h2>Быстрый режим</h2><p>Короткая ночь с боссом в конце. Монеты за неё начисляются, но достижения, цели, открытия и книга слияний не засчитываются, а результат не уходит в бот.</p><div class="menu"><button class="btn" id="bF5" type="button">5 минут</button><button class="btn" id="bF10" type="button">10 минут</button><button class="btn" id="bFBack" type="button">Назад</button></div></div></div>
+<div class="ov" id="ovTop"><div class="in"><h2>Рейтинг клана</h2><p class="hint">Только обычные ночи из Telegram-бота. Сначала по числу побед над боссом, затем по лучшему времени.</p><div id="topList"></div><div class="menu"><button class="btn" id="bTopBack" type="button">Назад</button></div></div></div>
 <div class="ov" id="ovCode"><div class="in"><h2>Тайное слово</h2><p>Введи код, чтобы получить награду в боте.</p><input id="cIn" type="text" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false"><p class="hint" id="cMsg"></p><div class="menu"><button class="btn" id="cOk" type="button">Подтвердить</button><button class="btn" id="cBack" type="button">Назад</button></div></div></div>
 <div class="ov" id="ovMeta"><div class="in">
 <div class="mh"><h2 id="metaT"></h2><div class="coins" id="metaC"></div><button class="btn sm" id="bBack" type="button">Назад</button></div>
@@ -181,6 +188,14 @@ function reportRun(win,t,lvl,k){try{if(!API_URL||!window.Telegram||!Telegram.Web
       .then(r=>r.json()).then(j=>{busy=false;$('cMsg').textContent=j&&j.ok?(j.msg||'Готово!'):((j&&j.msg)||'Неверный код.');if(j&&j.ok)$('cIn').value=''})
       .catch(()=>{busy=false;$('cMsg').textContent='Нет связи с сервером. Попробуй позже.'})}
   $('cOk').onclick=send;$('cIn').addEventListener('keydown',e=>{if(e.key==='Enter')send()})})();
+/* ---------- top & version ---------- */
+const GAME_VER='1.5';
+(function(){$('mVer').textContent='Версия '+GAME_VER;
+  $('bTop').onclick=()=>{$('ovTop').classList.add('on');const L=$('topList');L.textContent='Загрузка...';
+    fetch(API_URL+'/api/game/top').then(r=>r.json()).then(j=>{L.textContent='';if(!j||!j.ok||!j.top||!j.top.length){L.textContent='Пока никто не прошёл ни одной ночи.';return}
+      j.top.forEach((p,i)=>{const r=document.createElement('div');r.className='tr';const n=document.createElement('b');n.textContent=(i+1)+'.';const nm=document.createElement('span');nm.textContent=String(p.name||'Без имени').slice(0,24);
+        const st=document.createElement('i');st.textContent=(p.wins?'побед: '+p.wins+' · ':'')+'время '+fmt(p.best||0);r.append(n,nm,st);L.appendChild(r)})}).catch(()=>{L.textContent='Нет связи с сервером. Попробуй позже.'})};
+  $('bTopBack').onclick=()=>$('ovTop').classList.remove('on')})();
 /* ---------- utils ---------- */
 let rs=12345;const rnd=()=>{rs=(rs*16807)%2147483647;return rs/2147483647};
 const RR=Math.random;
@@ -327,7 +342,7 @@ function musFadeOut(){if(!mus||mFade)return;mFade=setInterval(()=>{if(!mus){clea
 
 /* ---------- data ---------- */
 const NAMES={sword:'Меч Люмос',crossbow:'Арбалет',lantern:'Фонарь',oil:'Горящее масло',knives:'Метательные ножи',censer:'Кадило',
-  spear:'Копьё стражи',thunder:'Жезл бури',bomb:'Пороховая бочка',frost:'Ледяной посох',axe:'Секира-бумеранг',
+  spear:'Копьё стражи',thunder:'Жезл бури',bomb:'Пороховая бочка',frost:'Ледяной посох',shield:'Щит стража',axe:'Секира-бумеранг',
   boots:'Сапоги дозорного',cuirass:'Кираса',amulet:'Знак Солнца',herbs:'Целебные травы',whetstone:'Точило',ring:'Кольцо Левиафана',charm:'Оберег Мракоборца',
   cloak:'Плащ странника',fang:'Клык упыря',book:'Книга Левиафана'};
 const INTRO={
@@ -336,12 +351,12 @@ const INTRO={
  knives:'Нож летит туда, куда ты идёшь.',censer:'Тяжёлое кадило вращается вокруг тебя.',
  spear:'Колющий выпад: пробивает всех врагов на линии удара.',thunder:'Молния бьёт случайного врага поблизости и всё вокруг него.',
  bomb:'Бочка с порохом летит во врагов и взрывается спустя мгновение.',
- frost:'Ледяная волна вокруг тебя ранит и надолго замедляет врагов.',axe:'Секира летит вперёд, возвращается и рубит всех на пути.'};
+ shield:'Щиты вращаются вокруг тебя, бьют врагов и отбивают снаряды.',frost:'Ледяная волна вокруг тебя ранит и надолго замедляет врагов.',axe:'Секира летит вперёд, возвращается и рубит всех на пути.'};
 const PTXT={boots:'Скорость +5%',cuirass:'+10 здоровья, каждый удар слабее на 1',amulet:'Свет шире (+8), осколки притягиваются издалека',
  herbs:'Здоровье восстанавливается быстрее (+0.22 в секунду)',whetstone:'Весь урон +7%',ring:'Оружие перезаряжается на 4% быстрее',
  charm:'Область действия оружия +5%',cloak:'Шанс уклониться от удара +4%',fang:'Каждый убитый враг лечит тебя немного',book:'Получаемый опыт +6%'};
 const WMAX=8,PMAX=8,SLOTW=4,SLOTP=5,EVO_NEED=3;
-const ALLW=['sword','crossbow','lantern','oil','knives','censer','spear','thunder','bomb','frost','axe'],
+const ALLW=['sword','crossbow','lantern','oil','knives','censer','spear','thunder','bomb','frost','axe','shield'],
       ALLP=['boots','cuirass','amulet','herbs','whetstone','ring','charm','cloak','fang','book'];
 const BASEW=['sword','crossbow','lantern'],BASEP=['boots','cuirass','amulet','herbs','whetstone'];
 const EVO={
@@ -355,6 +370,7 @@ const EVO={
  thunder:{pass:'book',id:'wrath',n:'Гнев небес',d:'Шесть молний за раз, каждая с огромным радиусом.'},
  bomb:{pass:'fang',id:'doom',n:'Бочка Страшного суда',d:'Четыре громадных взрыва подряд.'},
  frost:{pass:'cuirass',id:'permafrost',n:'Вечная мерзлота',d:'Огромная волна холода, замораживает почти намертво.'},
+ shield:{pass:'cuirass',id:'aegis',n:'Эгида Левиафана',d:'Шесть огромных щитов вращаются быстрее и крушат врагов.'},
  axe:{pass:'whetstone',id:'reaper',n:'Секира Палача',d:'Три огромные секиры летят дальше и бьют втрое сильнее.'}};
 const SHOP=[
  {k:'hp',n:'Крепкое здоровье',d:'+10 к максимуму здоровья',max:5,base:100,f:1.6},
@@ -376,6 +392,7 @@ const GOALS={
  cloak:{t:'Достичь 15 уровня за одну ночь',cur:()=>SV.maxLvl||1,max:15},
  fang:{t:'Убить 2000 врагов за всё время',cur:()=>SV.kills,max:2000},
  frost:{t:'Продержаться 15:00 за одну ночь',cur:()=>SV.best,max:900,time:true},
+ shield:{t:'Продержаться 5:00 за одну ночь',cur:()=>SV.best,max:300,time:true},
  axe:{t:'Победить 6 Палачей',cur:()=>SV.elites||0,max:6},
  book:{t:'Собрать 1000 монет за всё время',cur:()=>SV.totalCoins||0,max:1000}};
 function checkGoals(){const got=[];for(const k in GOALS){const q=GOALS[k];if(!SV.unl[k]&&q.cur()>=q.max){SV.unl[k]=1;got.push(k)}}if(got.length)save();return got}
@@ -401,7 +418,7 @@ const ET={
  boss:{hp:BOSSHP,spd:20,r:14,dmg:28,xp:0,sp:'boss',eye:'#ff2a1a',ey:.74,kr:0,scale:2,coin:0}};
 
 /* ---------- state ---------- */
-let st='menu',T=0,P,E,GM,BL,PD,FL,PT,FX,AR,HZ,TG,EX,AX=[],kills,shake=0,spawnAcc=0,evDone,bnT=0,nextId=1,pending=0,last=performance.now(),invKey='',bossDead=false,gotGoals=[];
+let st='menu',T=0,P,E,GM,BL,PD,FL,PT,FX,AR,HZ,TG,EX,AX=[],PO=[],poiT={chest:40,altar:150},kills,shake=0,spawnAcc=0,evDone,bnT=0,nextId=1,pending=0,last=performance.now(),invKey='',bossDead=false,gotGoals=[];
 const keys={};let joy=null,dbgVec=null,choicesNow=[];
 const upl=k=>SV.up[k]||0;
 const CAP=300;
@@ -413,7 +430,7 @@ function newGame(){
      spd:1+.04*upl('spd')+(m.spd||0),pow:1+.05*upl('pow')+(m.pow||0),lightB:7*upl('oil')+(m.light||0),arm:upl('arm')+(m.arm||0),reg:.25*upl('reg')+(m.reg||0),
      gold:1+.15*upl('gold'),xpm:1+.08*upl('xp'),rr:upl('rr'),rev:upl('rev'),coins:0,coinsF:0,hero:SV.hero,heal:0,slow:0,fb:6,pz:0};
   P.hp=P.mhp;P.w[he.w]=1;P.cd[he.w]=0;
-  E=[];GM=[];BL=[];PD=[];FL=[];PT=[];FX=[];AR=[];HZ=[];TG=[];EX=[];AX=[];
+  E=[];GM=[];BL=[];PD=[];FL=[];PT=[];FX=[];AR=[];HZ=[];TG=[];EX=[];AX=[];PO=[];poiT={chest:40,altar:150};
   for(let i=0;i<6;i++)spawn('rag');for(let i=0;i<4;i++)spawn('wolf');
 }
 function need(l){return Math.max(4,Math.floor((NEED_A+l*NEED_B+l*l*NEED_C)*NEEDK))}
@@ -433,9 +450,10 @@ function ceS(l,e){if(e)return{n:4,R:56,dmg:16,sp:3.2,heal:true};return{n:NI[l-1]
 function spS(l,e){if(e)return{dmg:60,L:110,w:12,cd:.55,back:true};return{dmg:20+4*(l-1),L:46+4*(l-1),w:9+(l>=5?3:0),cd:1.1-.06*(l-1),back:l>=4}}
 function thS(l,e){if(e)return{k:6,r:30,dmg:50,cd:1.2,range:150};return{k:[1,1,2,2,3,3,4,4][l-1],r:14+1.5*(l-1),dmg:18+4*(l-1),cd:1.9-.1*(l-1),range:130}}
 function bmS(l,e){if(e)return{n:4,r:56,dmg:90,fuse:.9,cd:3};return{n:[1,1,1,2,2,2,3,3][l-1],r:34+3*(l-1),dmg:32+7*(l-1),fuse:1.2,cd:4.4-.2*(l-1)}}
+function shS(l,e){if(e)return{n:6,R:46,dmg:18,sp:3.6};return{n:[1,1,2,2,3,3,4,4][l-1],R:32+(l>=5?5:0),dmg:8+2.4*(l-1),sp:2.2+.35*(l-1)}}
 function frS(l,e){if(e)return{r:92,dmg:55,frz:3.6,cd:1.7};return{r:40+4*(l-1),dmg:14+3.5*(l-1),frz:1.4+.2*(l-1),cd:3.6-.2*(l-1)}}
 function axS(l,e){if(e)return{n:3,D:125,dmg:62,r:12,cd:1.9};return{n:[1,1,1,2,2,2,3,3][l-1],D:70+6*(l-1),dmg:24+5*(l-1),r:8+.6*(l-1),cd:2.6-.1*(l-1)}}
-const SHEET={sword:swS,crossbow:xbS,lantern:lnS,oil:olS,knives:knS,censer:ceS,spear:spS,thunder:thS,bomb:bmS,frost:frS,axe:axS};
+const SHEET={sword:swS,crossbow:xbS,lantern:lnS,oil:olS,knives:knS,censer:ceS,spear:spS,thunder:thS,bomb:bmS,frost:frS,axe:axS,shield:shS};
 const LBL={dmg:['Урон',0],r:['Радиус',0],R:['Орбита',0],cd:['Перезарядка',2,'с'],n:['Количество',0],k:['Молний',0],pierce:['Пробивание',0],light:['Свет',0],
   tick:['Интервал',2,'с'],sp:['Скорость',1],dur:['Горение',1,'с'],L:['Длина',0],w:['Ширина',0],fuse:['Запал',1,'с'],range:['Дальность',0],frz:['Заморозка',1,'с'],D:['Дальность',0]};
 function descW(k,cur){
@@ -458,25 +476,69 @@ function spawn(t,pos,hpMul){const d=ET[t],[x,y]=pos||ringPos(238+RR()*26),sc=(t=
   const e={id:nextId++,t,d,x,y,hp,mhp:hp,kx:0,ky:0,fl:0,fr:RR()*4,face:0,r:d.r,ph:RR()*6,boss:t==='elite'||t==='boss',ct:0,sh:1+RR()*2,cd:2+RR()*3,st:0,wind:0,dx:0,dy:0,s1:3,s2:4,s3:7,ph0:0};
   E.push(e);return e}
 function banner(s){const b=$('bn');b.textContent=s;b.classList.add('on');bnT=3}
-const SPAWN=[['rag',0,34],['wolf',0,30],['crow',90,9],['archer',100,8],['plague',140,5],['ghoul',170,9],['boar',240,7],['wraith',320,7],['bloater',400,5],['necro',500,4],['knight',620,5]];
+const SPAWN=[['rag',0,34],['wolf',0,30],['crow',90,9],['archer',135,4],['plague',140,5],['ghoul',170,9],['boar',240,7],['wraith',320,7],['bloater',400,5],['necro',500,4],['knight',620,5]];
+var SPR=.88;
+/* темы: [от, до (время сложности), веса типов, объявление] — в это окно спавнятся только перечисленные враги */
+const THEMES=[[55,95,{wolf:1},'Из тьмы выходят волки'],[170,215,{ghoul:3,rag:2},'Кладбище просыпается'],[275,320,{boar:2,wolf:3},'Топот в темноте'],
+ [365,405,{crow:1},'Вороньи тучи'],[450,500,{wraith:3,ghoul:2},'Холодный туман'],[545,600,{plague:2,bloater:2,rag:3},'Мор и гниль'],
+ [655,705,{knight:2,necro:1},'Тёмная процессия'],[770,820,{ghoul:3,wraith:2},'Мёртвые поднимаются'],[885,935,{boar:2,knight:2},'Таран'],[1000,1060,{wolf:4,wraith:2},'Последний натиск']];
 const ELITES=[120,240,360,480,600,720,840,960,1080],ELCNT=[1,1,2,2,2,3,3,3,4];
 const HORDES=[[200,'wolf',30,'Волчья стая'],[330,'crow',26,'Воронья стая'],[480,'boar',10,'Стадо вепрей'],[600,'wraith',18,'Призраки поднимаются'],
-  [720,'wolf',50,'Огромная волчья стая'],[840,'ghoul',20,'Упыри выходят из могил'],[960,'knight',8,'Мёртвая стража'],[1060,'wolf',70,'Последняя волна']];
+  [720,[['wolf',34],['wraith',10]],0,'Волки и призраки'],[840,[['ghoul',20],['bloater',4]],0,'Упыри выходят из могил'],[960,[['knight',8],['necro',2]],0,'Мёртвая стража'],[1060,[['wolf',50],['boar',8],['wraith',8]],0,'Последняя волна']];
 var RATE_A=.9,RATE_B=115,RATE_C=1.1e6;
 function spawnLogic(dt){
   if(T>=GOAL)return;
-  const V=VT(),rate=RATE_A+V/RATE_B+V*V/RATE_C;spawnAcc+=rate*dt;
+  const V=VT();let TH=null;THEMES.forEach((h,i)=>{if(V>=h[0]&&V<h[1]){TH=h;if(!evDone['t'+i]){evDone['t'+i]=1;banner(h[3])}}});
+  const rate=(RATE_A+V/RATE_B+V*V/RATE_C)*SPR*(TH?1.1:1);spawnAcc+=rate*dt;
   while(spawnAcc>=1){spawnAcc-=1;if(E.length>=CAP)break;
     let tot=0;const w=SPAWN.map(([t,from,b])=>{if(V<from)return 0;const x=b*((t==='rag'||t==='wolf')?Math.max(.45,1-V/1800):1);tot+=x;return x});
     let r=RR()*tot,t='rag';for(let i=0;i<SPAWN.length;i++){r-=w[i];if(r<=0){t=SPAWN[i][0];break}}
+    if(TH){const ks=Object.keys(TH[2]);let tt=0;ks.forEach(k=>tt+=TH[2][k]);let q=RR()*tt;t=ks[0];for(const k of ks){q-=TH[2][k];if(q<=0){t=k;break}}}
+    if(t==='archer'){let n=0;for(const o of E)if(o.t==='archer'&&!o.dead)n++;if(n>=Math.min(8,2+Math.floor(V/200)))t='rag'}
     spawn(t)}
   ELITES.forEach((tm,i)=>{if(V>=tm&&!evDone['e'+i]){evDone['e'+i]=1;
     for(let k=0;k<ELCNT[i];k++)spawn('elite',null,1+.55*i);
     if(i>=2){spawn('plague');spawn('plague');spawn('knight')}
     banner(i===0?'Появляется Палач':i===ELITES.length-1?'Рассвет близко... но ночь не сдастся':'Палачи вернулись. Они крепче');snd('boss')}});
   HORDES.forEach(([tm,t,n,msg],i)=>{if(V>=tm&&!evDone['w'+i]){evDone['w'+i]=1;banner(msg);
-    for(let k=0;k<n&&E.length<CAP+60;k++){const a=k/n*Math.PI*2;spawn(t,[P.x+Math.cos(a)*236,P.y+Math.sin(a)*236])}}});
+    const parts=Array.isArray(t)?t:[[t,n]];let tot=0;parts.forEach(p=>tot+=p[1]);let kk=0;
+    for(const[tp,cnt]of parts)for(let k=0;k<cnt&&E.length<CAP+60;k++,kk++){const a=kk/tot*Math.PI*2;spawn(tp,[P.x+Math.cos(a)*236,P.y+Math.sin(a)*236])}}});
 }
+function chestReward(){const r=RR();FX.push({k:'ring',r:34,l:.5,m:.5});snd('level');
+  if(r<.45){const c=Math.round((18+T/40)*P.gold);P.coinsF+=c;P.coins=Math.floor(P.coinsF);banner('Сундук: +'+c+' монет')}
+  else if(r<.75){P.hp=Math.min(P.mhp,P.hp+P.mhp*.4);banner('Сундук: целебный настой')}
+  else{P.xp=Math.max(P.xp,P.need);banner('Сундук: озарение — новый уровень')}}
+function altarReward(o){FX.push({k:'boom',x:o.x,y:o.y,r:o.r*2.4,l:.5,m:.5});snd('boss');shake=Math.max(shake,5);
+  for(const e of E)if(!e.dead&&!e.boss&&Math.hypot(e.x-o.x,e.y-o.y)<o.r*3.2)kill(e);
+  const c=Math.round((40+T/20)*P.gold);P.coinsF+=c;P.coins=Math.floor(P.coinsF);P.xp=Math.max(P.xp,P.need);banner('Алтарь очищен: +'+c+' монет и новый уровень')}
+function poiLogic(dt){
+  if(FAST||evDone.boss||T>=GOAL-30)return;
+  let nC=0,nA=0;for(const o of PO){if(o.k==='chest')nC++;else nA++}
+  if(T>=poiT.chest&&nC<2){const[x,y]=ringPos(190+RR()*140);PO.push({k:'chest',x,y,r:11});poiT.chest=T+60+RR()*25}
+  if(T>=poiT.altar&&!nA){const[x,y]=ringPos(220+RR()*100);PO.push({k:'altar',x,y,r:34,prog:0,need:7,sp:0});poiT.altar=T+180;banner('Вдали вспыхнул алтарь тьмы')}
+  for(const o of PO){const d=Math.hypot(P.x-o.x,P.y-o.y);
+    if(d>1100){o.done=true;continue}
+    if(o.k==='chest'){if(d<o.r+6){o.done=true;chestReward()}}
+    else{if(d<o.r){o.prog+=dt;o.sp-=dt;if(o.sp<=0&&E.length<CAP){o.sp=1.2;const tp=VT()>170?(RR()<.5?'ghoul':'wolf'):(RR()<.5?'rag':'wolf');for(let i=0;i<3;i++)spawn(tp,[o.x+(RR()-.5)*o.r*3,o.y+(RR()-.5)*o.r*2.4])}
+        if(o.prog>=o.need){o.done=true;altarReward(o)}}else o.prog=Math.max(0,o.prog-dt*.5)}}
+  PO=PO.filter(o=>!o.done)}
+function drawPOI(g,cx,cy,lights){
+  for(const o of PO){const X=Math.round(o.x-cx),Y=Math.round(o.y-cy);if(X<-60||X>W+60||Y<-60||Y>H+60)continue;
+    if(o.k==='chest'){g.fillStyle='rgba(0,0,0,.4)';g.fillRect(X-6,Y+2,12,3);g.fillStyle='#5a3a1a';g.fillRect(X-5,Y-5,10,8);g.fillStyle='#7a5226';g.fillRect(X-5,Y-5,10,3);g.fillStyle='#d8b040';g.fillRect(X-1,Y-3,2,4);g.fillRect(X-5,Y-1,10,1);lights.push([X,Y-3,30,.9,1])}
+    else{g.strokeStyle='rgba(160,90,230,.8)';g.lineWidth=2;g.beginPath();g.ellipse(X,Y,o.r,o.r*.7,0,0,7);g.stroke();
+      g.strokeStyle='#e8c0ff';g.lineWidth=2;g.beginPath();g.ellipse(X,Y,o.r,o.r*.7,0,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,o.prog/o.need));g.stroke();
+      g.fillStyle='#2a2036';g.fillRect(X-3,Y-8,6,10);g.fillStyle='#b070ff';g.fillRect(X-1,Y-12,2,4);lights.push([X,Y-4,44,.9,1])}}}
+function drawMarkers(g,cx,cy){
+  if(FAST||st!=='play')return;
+  const list=[];for(const o of PO)list.push([o.x,o.y,o.k==='chest'?'#ffd060':'#c070ff',o.k==='chest'?'c':'a']);
+  for(const e of E)if(!e.dead&&(e.t==='elite'||e.t==='boss'))list.push([e.x,e.y,'#ff4040','b']);
+  const mx=W/2,my=H/2;
+  for(const[x,y,col,ty]of list){const X=x-cx,Y=y-cy;if(X>8&&X<W-8&&Y>8&&Y<H-8)continue;
+    const dx=X-mx,dy=Y-my,k=Math.min((W/2-14)/Math.abs(dx||1e-6),(H/2-14)/Math.abs(dy||1e-6)),ex=mx+dx*k,ey=Math.max(30,my+dy*k),a=Math.atan2(dy,dx);
+    g.save();g.translate(ex,ey);g.rotate(a);g.globalAlpha=.95;g.fillStyle=col;g.beginPath();g.moveTo(8,0);g.lineTo(-2,-5);g.lineTo(-2,5);g.closePath();g.fill();g.restore();
+    const ix=ex-Math.cos(a)*9,iy=ey-Math.sin(a)*9;g.fillStyle='rgba(0,0,0,.7)';g.fillRect(Math.round(ix)-5,Math.round(iy)-5,10,10);g.fillStyle=col;
+    const I=Math.round(ix),J=Math.round(iy);
+    if(ty==='c'){g.fillRect(I-3,J-2,6,4);g.fillStyle='#3a2a10';g.fillRect(I-3,J-1,6,1)}else if(ty==='a'){g.fillRect(I-1,J-3,2,6);g.fillRect(I-3,J-1,6,2)}else{g.fillRect(I-3,J-3,6,5);g.fillStyle='#000';g.fillRect(I-2,J-1,1,1);g.fillRect(I+1,J-1,1,1)}}}
 function startBoss(){
   evDone.boss=1;
   for(const e of E){if(!e.dead){e.dead=true;blood(e.x,e.y-6,3)}}
@@ -528,7 +590,7 @@ function update(dt){
   if(P.inv>0)P.inv-=dt;if(P.hurt>0)P.hurt-=dt;if(P.slow>0)P.slow-=dt;if(P.pz>0)P.pz-=dt;if(shake>0)shake=Math.max(0,shake-dt*14);
   P.fb=Math.min(6,P.fb+dt*3);
   const rg=P.reg+.22*(P.p.herbs||0);if(rg)P.hp=Math.min(P.mhp,P.hp+rg*dt);
-  weapons(dt);spawnLogic(dt);
+  weapons(dt);spawnLogic(dt);poiLogic(dt);
   if(T>=GOAL&&!evDone.boss)startBoss();
   for(const e of E){if(e.dead)continue;const dd=e.d;
     let dx=P.x-e.x,dy=P.y-e.y,d=Math.hypot(dx,dy)||1;
@@ -546,7 +608,7 @@ function update(dt){
     if(e.t==='boss'){[vx,vy]=bossAI(e,dt,dx,dy,d)}
     let fz=1;if(e.frz>0){e.frz-=dt;fz=e.t==='boss'?.75:.4}
     e.x+=(vx*fz+e.kx)*dt;e.y+=(vy*fz+e.ky)*dt;e.kx*=Math.max(0,1-9*dt);e.ky*=Math.max(0,1-9*dt);
-    e.fr+=dt*(dd.fly?14:7);if(Math.abs(dx)>1)e.face=dx<0?1:0;if(e.fl>0)e.fl-=dt;if(e.ct>0)e.ct-=dt;
+    e.fr+=dt*(dd.fly?14:7);if(Math.abs(dx)>1)e.face=dx<0?1:0;if(e.fl>0)e.fl-=dt;if(e.ct>0)e.ct-=dt;if(e.sct>0)e.sct-=dt;
     if(d<e.r+5&&P.inv<=0){hurtP(eDmg(e));if(dd.ghost)P.slow=1.5}}
   let j=0;for(let i=0;i<E.length;i++)if(!E[i].dead)E[j++]=E[i];E.length=j;
   for(const a of AR){a.x+=a.vx*dt;a.y+=a.vy*dt;a.l-=dt;if(P.inv<=0&&Math.hypot(a.x-P.x,a.y-(P.y-8))<(a.orb?5:6)){hurtP(a.orb?Math.max(1,a.dm-(P.p.cuirass||0)-P.arm):Math.max(1,Math.round(a.dm*(1+VT()/700))-(P.p.cuirass||0)-P.arm));a.l=0}}
@@ -610,6 +672,10 @@ function weapons(dt){
   if(P.w.censer){const s=ceS(P.w.censer,P.evo.censer),R=s.R*areaMul();P.censer=P.censer||0;P.censer+=dt*s.sp;P.cpos=[];
     for(let i=0;i<s.n;i++){const a=P.censer+i*Math.PI*2/s.n,x=P.x+Math.cos(a)*R,y=P.y-6+Math.sin(a)*R*.8;P.cpos.push([x,y]);
       for(const e of E){if(e.dead||e.ct>0)continue;const dx=e.x-x,dy=(e.y-5)-y;if(dx*dx+dy*dy<(e.r+5)*(e.r+5)){e.ct=.45;hit(e,s.dmg,Math.atan2(dy,dx),70);if(s.heal)P.hp=Math.min(P.mhp,P.hp+.25)}}}}
+  if(P.w.shield){const s=shS(P.w.shield,P.evo.shield),R=s.R*areaMul();P.shA=(P.shA||0)+dt*s.sp;P.spos=[];
+    for(let i=0;i<s.n;i++){const a=P.shA+i*Math.PI*2/s.n,x=P.x+Math.cos(a)*R,y=P.y-6+Math.sin(a)*R*.85;P.spos.push([x,y,a]);
+      for(const e of E){if(e.dead||e.sct>0)continue;const dx=e.x-x,dy=(e.y-5)-y;if(dx*dx+dy*dy<(e.r+7)*(e.r+7)){e.sct=.4;hit(e,s.dmg,Math.atan2(dy,dx),90)}}
+      for(const q of AR){if(q.l>0&&Math.hypot(q.x-x,q.y-y)<10){q.l=0;PT.push({x:q.x,y:q.y,vx:(RR()-.5)*50,vy:-20,l:.25,c:'#aac0ff'})}}}}
   if(P.w.spear){const s=spS(P.w.spear,P.evo.spear),L=s.L*areaMul();P.cd.spear-=dt;
     if(P.cd.spear<=0){const n=nearest(L+30);if(n){const a=Math.atan2(n.y-P.y,n.x-P.x),dirs=s.back?[a,a+Math.PI]:[a];
       for(const aa of dirs){const c=Math.cos(aa),sn=Math.sin(aa);
@@ -678,7 +744,7 @@ function endGame(win){st='end';musFadeOut();const earned=bank(win,false);if(!FAS
   $('endS').textContent=(FAST?'Быстрый режим ('+FAST+' мин): достижения не засчитываются · ':'')+'Продержался: '+fmt(T)+' · Убито: '+kills+' · Уровень: '+P.lvl+(gotGoals.length?' · Открыто: '+gotGoals.map(k=>NAMES[k]).join(', '):'');
   $('endC').innerHTML='+'+earned+'<i class="co"></i> (в сумке: '+SV.coins+')';
   $('ovEnd').classList.add('on');if(win)snd('win')}
-function hideAll(){['ovMenu','ovMeta','ovEnd','ovLvl','ovPause','ovFast','ovCode'].forEach(i=>$(i).classList.remove('on'))}
+function hideAll(){['ovMenu','ovMeta','ovEnd','ovLvl','ovPause','ovFast','ovCode','ovTop'].forEach(i=>$(i).classList.remove('on'))}
 function startGame(){ainit();hideAll();newGame();st='play';musStart();$('bn').classList.remove('on');last=performance.now()}
 function toMenu(){musStop();hideAll();newGame();st='menu';refreshMenu();$('ovMenu').classList.add('on')}
 function refreshMenu(){$('mCoins').innerHTML=SV.coins+'<i class="co"></i> · лучшее время: '+fmt(SV.best)+' · ночей: '+SV.runs+' · рассветов: '+SV.wins;
@@ -787,6 +853,7 @@ function draw(){
     if(f.bomb){g.fillStyle='#6a4a2a';g.fillRect(X-3,Y-3,6,6);g.fillStyle='#3a2a18';g.fillRect(X-3,Y-1,6,1);g.fillStyle='#ffd060';g.fillRect(X+1,Y-6,2,3)}
     else{g.fillStyle='#5a3a1a';g.fillRect(X-2,Y-2,4,4);g.fillStyle='#ffb040';g.fillRect(X-1,Y-4,2,2)}}
   for(const q of AX){const X=Math.round(q.x-cx),Y=Math.round(q.y-cy);g.save();g.translate(X,Y);g.rotate(T*16);g.fillStyle='#6a4a2a';g.fillRect(-1,-6,2,12);g.fillStyle='#c8ccd6';g.fillRect(-6,-6,6,4);g.fillRect(0,2,6,4);g.fillStyle='#f0f4ff';g.fillRect(-6,-6,6,1);g.fillRect(0,2,6,1);g.restore()}
+  if(P.w.shield&&P.spos){for(const c of P.spos){const X=Math.round(c[0]-cx),Y=Math.round(c[1]-cy);g.save();g.translate(X,Y);g.rotate(c[2]+Math.PI/2);g.fillStyle='#34456a';g.fillRect(-4,-5,8,9);g.fillRect(-3,4,6,1);g.fillRect(-2,5,4,1);g.fillStyle='#9ab0d8';g.fillRect(-4,-5,8,1);g.fillRect(-4,-5,1,8);g.fillStyle='#d9c27a';g.fillRect(-1,-3,2,7);g.fillRect(-3,-1,6,2);g.restore()}}
   if(P.w.censer&&P.cpos){const px=Math.round(P.x-cx),py=Math.round(P.y-cy-6);for(const c of P.cpos){const X=Math.round(c[0]-cx),Y=Math.round(c[1]-cy);
     g.strokeStyle='rgba(120,100,70,.7)';g.lineWidth=1;g.beginPath();g.moveTo(px,py);g.lineTo(X,Y);g.stroke();
     g.fillStyle='#4a3a28';g.fillRect(X-3,Y-3,6,6);g.fillStyle='#8a6a3a';g.fillRect(X-3,Y-3,6,1);g.fillStyle='#e8842a';g.fillRect(X-1,Y-1,2,2);
@@ -800,6 +867,7 @@ function draw(){
       for(const[c,w]of[['rgba(150,200,255,'+k+')',4],['rgba(255,255,255,'+k+')',2]]){g.strokeStyle=c;g.lineWidth=w;g.beginPath();g.moveTo(X,Y-150);for(let i=1;i<7;i++)g.lineTo(X+((hash(i,(f.x|0))%14)-7),Y-150+i*22);g.lineTo(X,Y);g.stroke()}}
     else if(f.k==='boom'){const X=Math.round(f.x-cx),Y=Math.round(f.y-cy),r=f.r*(1.15-k*.25);g.fillStyle=(f.g?'rgba(120,220,60,':f.i?'rgba(150,215,255,':'rgba(255,170,70,')+.5*k+')';g.beginPath();g.arc(X,Y,r,0,7);g.fill();g.strokeStyle='rgba(255,240,200,'+k+')';g.lineWidth=2;g.beginPath();g.arc(X,Y,r,0,7);g.stroke()}}
   for(const p of PT){g.fillStyle=p.c;g.fillRect(Math.round(p.x-cx),Math.round(p.y-cy),2,2)}
+  drawPOI(g,cx,cy,lights);
   /* darkness */
   dg.globalCompositeOperation='source-over';dg.clearRect(0,0,W,H);dg.fillStyle='rgba(4,3,8,.93)';dg.fillRect(0,0,W,H);
   dg.globalCompositeOperation='destination-out';
@@ -816,6 +884,7 @@ function draw(){
   for(const a of AR){const X=Math.round(a.x-cx),Y=Math.round(a.y-cy),an=Math.atan2(a.vy,a.vx);if(a.orb){g.fillStyle='rgba(176,74,255,.45)';g.beginPath();g.arc(X,Y,5,0,7);g.fill();g.fillStyle='#d9a8ff';g.beginPath();g.arc(X,Y,3,0,7);g.fill();g.fillStyle='#fff';g.fillRect(X-1,Y-1,2,2);continue}g.save();g.translate(X,Y);g.rotate(an);g.fillStyle='#d8c8a0';g.fillRect(-4,0,6,1);g.fillStyle='#ff6040';g.fillRect(2,-1,2,3);g.restore()}
   for(const t of TG){const X=Math.round(t.x-cx),Y=Math.round(t.y-cy),k=t.t/t.dur;g.fillStyle='rgba(200,30,30,'+(.18+.25*k)+')';g.beginPath();g.arc(X,Y,t.r,0,7);g.fill();g.strokeStyle='rgba(255,80,60,'+(.5+.5*k)+')';g.lineWidth=2;g.beginPath();g.arc(X,Y,t.r*k,0,7);g.stroke();g.beginPath();g.arc(X,Y,t.r,0,7);g.stroke()}
   g.drawImage(VIG,0,0,W,H);
+  drawMarkers(g,cx,cy);
   if(P.hurt>0){g.fillStyle='rgba(140,0,0,'+Math.min(.4,P.hurt*1.6)+')';g.fillRect(0,0,W,H)}
   if(P.pz>0){g.fillStyle='rgba(60,140,30,.16)';g.fillRect(0,0,W,H)}
   g.save();g.globalAlpha=.03;g.translate((RR()*128)|0,(RR()*128)|0);g.fillStyle=GRAIN;g.fillRect(-128,-128,W+256,H+256);g.restore();
@@ -839,7 +908,7 @@ function frame(now){
   requestAnimationFrame(frame)}
 setView();newGame();refreshMenu();addEventListener('resize',setView);addEventListener('orientationchange',()=>setTimeout(setView,150));
 requestAnimationFrame(frame);
-window.__dbg={setFast(n){FAST=n},endGame,ET,tune(o){if('NEED_A'in o)NEED_A=o.NEED_A;if('NEED_B'in o)NEED_B=o.NEED_B;if('NEED_C'in o)NEED_C=o.NEED_C;if('HP_A'in o)HP_A=o.HP_A;if('HP_B'in o)HP_B=o.HP_B;if('RATE_A'in o)RATE_A=o.RATE_A;if('RATE_B'in o)RATE_B=o.RATE_B;if('RATE_C'in o)RATE_C=o.RATE_C},step(dt,n){for(let i=0;i<n&&st==='play';i++)update(dt)},get:()=>({st,T,kills,hp:P.hp,mhp:P.mhp,lvl:P.lvl,n:E.length,w:P.w,p:P.p,evo:P.evo,coins:P.coins,x:P.x,y:P.y}),
+window.__dbg={setFast(n){FAST=n},PO:()=>PO,endGame,ET,tune(o){if('NEED_A'in o)NEED_A=o.NEED_A;if('NEED_B'in o)NEED_B=o.NEED_B;if('NEED_C'in o)NEED_C=o.NEED_C;if('HP_A'in o)HP_A=o.HP_A;if('HP_B'in o)HP_B=o.HP_B;if('RATE_A'in o)RATE_A=o.RATE_A;if('RATE_B'in o)RATE_B=o.RATE_B;if('RATE_C'in o)RATE_C=o.RATE_C},step(dt,n){for(let i=0;i<n&&st==='play';i++)update(dt)},get:()=>({st,T,kills,hp:P.hp,mhp:P.mhp,lvl:P.lvl,n:E.length,w:P.w,p:P.p,evo:P.evo,coins:P.coins,x:P.x,y:P.y}),
   setVec(v){dbgVec=v},E:()=>E,P:()=>P,SV,pick,choices:()=>choicesNow,start:startGame,menu:toMenu,openMeta,openLevel,save,set(k,v){if(k==='T')T=v},bankIt:()=>bank,mus:()=>mus?{src:mus.src.split('/').pop(),t:mus.currentTime,d:mus.duration,paused:mus.paused,muted:mus.muted,vol:mus.volume}:null,musNext,seekEnd:()=>{if(mus&&isFinite(mus.duration))mus.currentTime=Math.max(0,mus.duration-.6)}};
 })();
 </script>
