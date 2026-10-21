@@ -35,6 +35,9 @@ canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 #topList{width:100%;margin:8px 0;text-align:left}
 .tr{display:flex;gap:8px;align-items:baseline;padding:6px 8px;border-bottom:1px solid rgba(140,130,110,.25);font:600 18px 'Cormorant SC',serif;color:var(--parch)}
 .tr b{width:1.6em;color:#c9a23a}.tr span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tr i{font-style:normal;color:#a8998a;font-size:15px;white-space:nowrap}
+#ovLog{background:rgba(5,4,7,.98);z-index:70}
+#logList h3{font:700 20px 'Cormorant SC',serif;color:#c9a23a;margin:12px 0 4px;letter-spacing:.1em}
+#logList ul{margin:0 0 6px;padding-left:20px;color:var(--parch);font-size:15px;line-height:1.4}
 #bossb{left:18%;right:18%;top:calc(1cqw + max(18px,4.4cqw) + 1.6cqw);height:max(10px,2.2cqw);background:#120c0c;border:max(2px,.3cqw) solid var(--edge);display:none}#bossb.on{display:block}#bossf{display:block;height:100%;width:100%;background:linear-gradient(#a03aff,#4a1a8a)}#bosst{position:absolute;inset:0;text-align:center;font-size:max(8px,1.6cqw);line-height:max(10px,2.2cqw);color:#f0e0ff;letter-spacing:.2em}
 #stage.nohud .hud,#stage.nohud #mute{visibility:hidden}
 #bPause{position:absolute;right:2cqw;top:calc(2cqw + max(52px,12cqw));background:rgba(10,8,12,.7);color:var(--parch);border:1px solid var(--edge);font:inherit;font-weight:700;font-size:max(12px,2.4cqw);letter-spacing:.1em;padding:.25em .7em;cursor:pointer;z-index:5}
@@ -108,6 +111,7 @@ canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 <button class="btn" id="bHeroes" type="button">Герои</button>
 <button class="btn" id="bBook" type="button">Книга слияний</button>
 <button class="btn" id="bTop" type="button">Рейтинг</button>
+<button class="btn" id="bLog" type="button">Что нового</button>
 </div>
 <p class="hint" id="mHero"></p>
 <p class="hint" id="mVer" style="opacity:.55;margin-top:4px"></p>
@@ -116,6 +120,7 @@ canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 
 <div class="ov" id="ovFast"><div class="in"><h2>Быстрый режим</h2><p>Короткая ночь с боссом в конце. Монеты за неё начисляются, но достижения, цели, открытия и книга слияний не засчитываются, а результат не уходит в бот.</p><div class="menu"><button class="btn" id="bF5" type="button">5 минут</button><button class="btn" id="bF10" type="button">10 минут</button><button class="btn" id="bFBack" type="button">Назад</button></div></div></div>
 <div class="ov" id="ovTop"><div class="in"><h2>Рейтинг клана</h2><p class="hint">Только обычные ночи из Telegram-бота. Сначала по числу побед над боссом, затем по лучшему времени.</p><div id="topList"></div><div class="menu"><button class="btn" id="bTopBack" type="button">Назад</button></div></div></div>
+<div class="ov" id="ovLog"><div class="in" style="max-width:560px"><h2>Что нового</h2><div id="logList" style="text-align:left;width:100%"></div><div class="menu"><button class="btn" id="bLogBack" type="button">Назад</button></div></div></div>
 <div class="ov" id="ovCode"><div class="in"><h2>Тайное слово</h2><p>Введи код, чтобы получить награду в боте.</p><input id="cIn" type="text" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false"><p class="hint" id="cMsg"></p><div class="menu"><button class="btn" id="cOk" type="button">Подтвердить</button><button class="btn" id="cBack" type="button">Назад</button></div></div></div>
 <div class="ov" id="ovMeta"><div class="in">
 <div class="mh"><h2 id="metaT"></h2><div class="coins" id="metaC"></div><button class="btn sm" id="bBack" type="button">Назад</button></div>
@@ -139,6 +144,7 @@ canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 <h2 id="endH"></h2>
 <p id="endP"></p>
 <p id="endS" class="hint"></p>
+<p id="endX" class="hint" style="text-align:left;max-width:520px;margin:6px auto"></p>
 <p id="endC" class="coins"></p>
 <div class="menu">
 <button class="btn" id="bAgain" type="button">Ещё раз</button>
@@ -155,7 +161,7 @@ const cv=$('c'),g=cv.getContext('2d');g.imageSmoothingEnabled=false;
 
 /* ---------- save ---------- */
 const SKEY='aeu_save_v1';
-const SV={coins:0,up:{},unl:{},heroes:{recruit:1},hero:'recruit',best:0,kills:0,wins:0,runs:0,evo:{},totalCoins:0,elites:0,maxLvl:1,bossKills:0,ts:0};
+const SV={coins:0,up:{},unl:{},heroes:{recruit:1},hero:'recruit',best:0,kills:0,wins:0,runs:0,evo:{},totalCoins:0,elites:0,maxLvl:1,bossKills:0,ts:0,ach:{},hx:{},chests:0,altars:0,maxed:{}};
 (function(){try{const s=localStorage.getItem(SKEY);if(s){const o=JSON.parse(s);for(const k in o)if(k in SV)SV[k]=o[k]}}catch(e){}})();
 const API_URL='https://sunguard-leviathan.duckdns.org';
 let cloudT=0;
@@ -191,7 +197,9 @@ function reportRun(win,t,lvl,k){try{if(!API_URL||!window.Telegram||!Telegram.Web
       .catch(()=>{busy=false;$('cMsg').textContent='Нет связи с сервером. Попробуй позже.'})}
   $('cOk').onclick=send;$('cIn').addEventListener('keydown',e=>{if(e.key==='Enter')send()})})();
 /* ---------- top & version ---------- */
-const GAME_VER='1.6';
+const GAME_VER='1.7';
+setTimeout(function(){const L=document.getElementById('logList');if(!L)return;for(const c of CHANGELOG){const h=document.createElement('h3');h.textContent='Версия '+c.v+' · '+c.d;const u=document.createElement('ul');for(const t of c.t){const li=document.createElement('li');li.textContent=t;u.appendChild(li)}L.append(h,u)}
+  document.getElementById('bLog').onclick=()=>document.getElementById('ovLog').classList.add('on');document.getElementById('bLogBack').onclick=()=>document.getElementById('ovLog').classList.remove('on')},0);
 (function(){$('mVer').textContent='Версия '+GAME_VER;
   $('bTop').onclick=()=>{$('ovTop').classList.add('on');const L=$('topList');L.textContent='Загрузка...';
     fetch(API_URL+'/api/game/top').then(r=>r.json()).then(j=>{L.textContent='';if(!j||!j.ok||!j.top||!j.top.length){L.textContent='Пока никто не прошёл ни одной ночи.';return}
@@ -376,15 +384,18 @@ const EVO={
  shield:{pass:'cuirass',id:'aegis',n:'Эгида Левиафана',d:'Шесть огромных щитов вращаются быстрее и крушат врагов.'},
  axe:{pass:'whetstone',id:'reaper',n:'Секира Палача',d:'Три огромные секиры летят дальше и бьют втрое сильнее.'}};
 const SHOP=[
- {k:'hp',n:'Крепкое здоровье',d:'+10 к максимуму здоровья',max:5,base:100,f:1.6},
- {k:'pow',n:'Закалка',d:'+5% к урону',max:5,base:140,f:1.7},
- {k:'spd',n:'Лёгкая поступь',d:'+4% к скорости',max:4,base:120,f:1.6},
- {k:'oil',n:'Масло для фонаря',d:'+7 к радиусу света',max:5,base:90,f:1.6},
- {k:'arm',n:'Стёганка',d:'Каждый удар слабее на 1',max:3,base:260,f:1.9},
- {k:'reg',n:'Походная аптечка',d:'+0.25 здоровья в секунду',max:3,base:220,f:1.8},
- {k:'gold',n:'Чутьё на золото',d:'+15% монет',max:5,base:160,f:1.65},
- {k:'xp',n:'Опыт дороги',d:'+8% опыта',max:5,base:160,f:1.65},
- {k:'rr',n:'Второе мнение',d:'+1 пересмотр выбора за ночь',max:3,base:220,f:1.9},
+ {k:'hp',n:'Крепкое здоровье',d:'+10 к максимуму здоровья',max:8,base:100,f:1.55},
+ {k:'pow',n:'Закалка',d:'+5% к урону',max:8,base:140,f:1.6},
+ {k:'spd',n:'Лёгкая поступь',d:'+4% к скорости',max:6,base:120,f:1.55},
+ {k:'oil',n:'Масло для фонаря',d:'+7 к радиусу света',max:7,base:90,f:1.55},
+ {k:'arm',n:'Стёганка',d:'Каждый удар слабее на 1',max:5,base:260,f:1.8},
+ {k:'reg',n:'Походная аптечка',d:'+0.25 здоровья в секунду',max:5,base:220,f:1.7},
+ {k:'gold',n:'Чутьё на золото',d:'+15% монет',max:8,base:160,f:1.55},
+ {k:'xp',n:'Опыт дороги',d:'+8% опыта',max:8,base:160,f:1.55},
+ {k:'rr',n:'Второе мнение',d:'+1 пересмотр выбора за ночь',max:5,base:220,f:1.8},
+ {k:'mag',n:'Притяжение',d:'+10 к радиусу подбора осколков и монет',max:5,base:130,f:1.6},
+ {k:'cdr',n:'Быстрые руки',d:'Оружие перезаряжается на 2% быстрее',max:5,base:260,f:1.75},
+ {k:'start',n:'Запасливость',d:'+1 выбор усиления в начале каждой ночи',max:3,base:500,f:2.1},
  {k:'rev',n:'Медальон Наттрамна',d:'Один раз за ночь встать после смерти',max:1,base:2200,f:1}];
 const UNL=[{k:'oil',c:150},{k:'knives',c:250},{k:'censer',c:350},{k:'ring',c:200},{k:'charm',c:200}];
 /* цели: предмет открывается сам, когда цель выполнена */
@@ -403,6 +414,11 @@ const HEROES={
  recruit:{n:'Рекрут Левиафана',d:'Ничем не выделяется, но упрям.',w:'sword',cost:0,mods:{},tag:'Без особенностей'},
  gareth:{n:'Лесник Гарет',d:'Охотник из Чёрного леса. Быстрый, но хрупкий.',w:'crossbow',cost:300,mods:{hp:-20,spd:.1},tag:'Скорость +10%, здоровье −20'},
  oswald:{n:'Брат Освальд',d:'Бывший послушник. Видит дальше и лечится, но бьёт слабо.',w:'censer',cost:500,mods:{light:22,reg:.4,pow:-.1},tag:'Свет +22, лечение, урон −10%'},
+ selma:{n:'Ведунья Сельма',d:'Знахарка с севера. Холод слушается её, а раны затягиваются быстрее.',w:'frost',cost:700,mods:{light:10,reg:.2,hp:-10},tag:'Свет +10, лечение, здоровье −10'},
+ brenn:{n:'Кузнец Бренн',d:'Выковал свой щит сам. Медленный, но почти несокрушимый.',w:'shield',cost:1100,mods:{hp:30,arm:1,spd:-.06},tag:'Здоровье +30, удары слабее на 1, скорость −6%'},
+ mira:{n:'Дозорная Мира',d:'Метает секиру без промаха. Рискует собой ради урона.',w:'axe',cost:1300,mods:{pow:.1,hp:-15},tag:'Урон +10%, здоровье −15'},
+ fuse:{n:'Подрывник Фитиль',d:'Любит громкие решения. Бочки у него никогда не кончаются.',w:'bomb',cost:1500,mods:{pow:.08,spd:.05,hp:-10},tag:'Урон +8%, скорость +5%, здоровье −10'},
+ ash:{n:'Пепельный рыцарь',d:'Тот, кто трижды сразил Властелина. Говорят, пепел помнит его имя.',w:'thunder',cost:0,ach:'Награда за достижение «Бич Властелина»',mods:{hp:40,pow:.1,light:10,reg:.3},tag:'Здоровье +40, урон +10%, свет +10, лечение'},
  gray:{n:'Седой командор',d:'Старый боец ордена. Крепкий, как дубовая дверь.',w:'knives',cost:900,mods:{hp:40,arm:1},tag:'Здоровье +40, удары слабее на 1'}};
 const BOSSHP=9000;
 const ET={
@@ -421,12 +437,12 @@ const ET={
  boss:{hp:BOSSHP,spd:20,r:14,dmg:28,xp:0,sp:'boss',eye:'#ff2a1a',ey:.74,kr:0,scale:2,coin:0}};
 
 /* ---------- state ---------- */
-let st='menu',T=0,P,E,GM,BL,PD,FL,PT,FX,AR,HZ,TG,EX,AX=[],PO=[],poiT={chest:40,altar:150},kills,shake=0,spawnAcc=0,evDone,bnT=0,nextId=1,pending=0,last=performance.now(),invKey='',bossDead=false,gotGoals=[];
+let st='menu',T=0,P,E,GM,BL,PD,FL,PT,FX,AR,HZ,TG,EX,AX=[],PO=[],poiT={chest:40,altar:150},kills,shake=0,spawnAcc=0,evDone,bnT=0,nextId=1,pending=0,last=performance.now(),invKey='',bossDead=false,gotGoals=[],gotAch=[],lastRun=null;
 const keys={};let joy=null,dbgVec=null,choicesNow=[];
 const upl=k=>SV.up[k]||0;
 const CAP=300;
 function newGame(){
-  const he=HEROES[SV.hero]||HEROES.recruit,m=he.mods||{};
+  const he=HEROES[SV.hero]||HEROES.recruit,m=Object.assign({},he.mods||{});{const hb=heroBonus(hxLevel(SV.hx[SV.hero]||0).l);for(const k in hb)m[k]=(m[k]||0)+hb[k]}
   GOAL=FAST?FAST*60:1200;FK=FAST?1200/GOAL*FKD:1;BOSSK=FAST===5?.4:FAST===10?.65:1;NEEDK=FAST===5?.55:FAST===10?.75:1;
   T=0;kills=0;shake=0;spawnAcc=0;evDone={};pending=0;bossDead=false;gotGoals=[];
   P={x:0,y:0,hp:0,mhp:100+10*upl('hp')+(m.hp||0),inv:0,hurt:0,face:0,fr:0,lvl:1,xp:0,need:need(1),w:{},p:{},evo:{},cd:{},aura:0,mv:false,aim:0,orb:0,
@@ -440,7 +456,7 @@ function need(l){return Math.max(4,Math.floor((NEED_A+l*NEED_B+l*l*NEED_C)*NEEDK
 var NEED_A=6,NEED_B=5,NEED_C=.45;
 const dmgMul=()=>P.pow+.07*(P.p.whetstone||0);
 const areaMul=()=>1+.05*(P.p.charm||0);
-const cdMul=()=>Math.max(.5,1-.04*(P.p.ring||0));
+const cdMul=()=>Math.max(.45,1-.04*(P.p.ring||0)-.02*upl('cdr'));
 /* листы характеристик оружия: чистые функции от уровня l (1-8) и признака слияния e */
 const NI=[1,1,2,2,2,3,3,3],PI=[0,0,0,1,1,2,2,3];
 function swS(l,e){const s={dmg:17+3.5*(l-1),r:38+3*(l-1),cd:.85-.05*(l-1),back:l>=4,arc:l>=7?1.5:1.15};
@@ -508,11 +524,11 @@ function spawnLogic(dt){
     const parts=Array.isArray(t)?t:[[t,n]];let tot=0;parts.forEach(p=>tot+=p[1]);let kk=0;
     for(const[tp,cnt]of parts)for(let k=0;k<cnt&&E.length<CAP+60;k++,kk++){const a=kk/tot*Math.PI*2;spawn(tp,[P.x+Math.cos(a)*236,P.y+Math.sin(a)*236])}}});
 }
-function chestReward(){const r=RR();FX.push({k:'ring',r:34,l:.5,m:.5});snd('level');
+function chestReward(){P.nChest=(P.nChest||0)+1;const r=RR();FX.push({k:'ring',r:34,l:.5,m:.5});snd('level');
   if(r<.45){const c=Math.round((18+T/40)*P.gold);P.coinsF+=c;P.coins=Math.floor(P.coinsF);banner('Сундук: +'+c+' монет')}
   else if(r<.75){P.hp=Math.min(P.mhp,P.hp+P.mhp*.4);banner('Сундук: целебный настой')}
   else{P.xp=Math.max(P.xp,P.need);banner('Сундук: озарение — новый уровень')}}
-function altarReward(o){FX.push({k:'boom',x:o.x,y:o.y,r:o.r*2.4,l:.5,m:.5});snd('boss');shake=Math.max(shake,5);
+function altarReward(o){P.nAlt=(P.nAlt||0)+1;FX.push({k:'boom',x:o.x,y:o.y,r:o.r*2.4,l:.5,m:.5});snd('boss');shake=Math.max(shake,5);
   for(const e of E)if(!e.dead&&!e.boss&&Math.hypot(e.x-o.x,e.y-o.y)<o.r*3.2)kill(e);
   const c=Math.round((40+T/20)*P.gold);P.coinsF+=c;P.coins=Math.floor(P.coinsF);P.xp=Math.max(P.xp,P.need);banner('Алтарь очищен: +'+c+' монет и новый уровень')}
 function poiLogic(dt){
@@ -637,7 +653,7 @@ function update(dt){
   FL=FL.filter(f=>!f.dead);
   for(const p of PD){p.l-=dt;p.tick-=dt;if(p.tick<=0){p.tick=.35;for(const e of E)if(!e.dead&&Math.hypot(e.x-p.x,e.y-p.y)<p.r+e.r*.5)hit(e,p.dmg,0,0)}}
   PD=PD.filter(p=>p.l>0);
-  const mr=40+14*(P.p.amulet||0);
+  const mr=40+14*(P.p.amulet||0)+10*upl('mag');
   for(const q of GM){const dx=P.x-q.x,dy=P.y-q.y,d=Math.hypot(dx,dy);if(d<mr||q.mag){q.mag=true;const s=(150+(q.v>5?60:0))*dt;q.x+=dx/d*Math.min(s,d);q.y+=dy/d*Math.min(s,d)}
     if(d<7){q.dead=true;
       if(q.k==='x'){P.xp+=q.v*(P.xpm+.06*(P.p.book||0));snd('gem')}
@@ -730,7 +746,7 @@ function openLevel(){choicesNow=choices();renderChoices();st='level';$('ovLvl').
   const f=$('cards').firstChild;if(f&&f.focus)try{f.focus({preventScroll:true})}catch(e){}}
 $('bReroll').onclick=()=>{if(P.rr>0&&st==='level'){P.rr--;choicesNow=choices();renderChoices()}};
 function pick(i){const o=choicesNow[i];if(!o||st!=='level')return;
-  if(o.t==='w'){P.w[o.k]=(P.w[o.k]||0)+1;if(P.cd[o.k]===undefined)P.cd[o.k]=0}
+  if(o.t==='w'){P.w[o.k]=(P.w[o.k]||0)+1;if(P.cd[o.k]===undefined)P.cd[o.k]=0;if(P.w[o.k]>=WMAX&&!FAST)SV.maxed[o.k]=1}
   else if(o.t==='p'){P.p[o.k]=(P.p[o.k]||0)+1;if(o.k==='cuirass'){P.mhp+=10;P.hp=Math.min(P.mhp,P.hp+10)}}
   else if(o.t==='e'){P.evo[o.k]=true;if(!FAST)SV.evo[EVO[o.k].id]=1;save();banner('Слияние: '+EVO[o.k].n);snd('evo');FX.push({k:'ring',r:90,l:.6,m:.6})}
   else P.hp=P.mhp;
@@ -740,16 +756,17 @@ function pick(i){const o=choicesNow[i];if(!o||st!=='level')return;
 /* ---------- flow ---------- */
 function fmt(t){t=Math.floor(t);return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')}
 function bank(win,partial){const bonus=partial?0:(FAST?(win?(FAST===5?120:200):Math.floor(T*FK/10)):(win?300:Math.floor(T/10))),earned=P.coins+bonus;
-  SV.coins+=earned;if(FAST){gotGoals=[];save();return earned}SV.totalCoins=(SV.totalCoins||0)+earned;SV.best=Math.max(SV.best,Math.floor(T));SV.kills+=kills;SV.maxLvl=Math.max(SV.maxLvl||1,P.lvl);SV.runs++;if(win){SV.wins++;SV.bossKills=(SV.bossKills||0)+1}
-  gotGoals=checkGoals();save();return earned}
+  SV.coins+=earned;if(FAST){gotGoals=[];save();return earned}SV.totalCoins=(SV.totalCoins||0)+earned;SV.best=Math.max(SV.best,Math.floor(T));SV.kills+=kills;SV.maxLvl=Math.max(SV.maxLvl||1,P.lvl);SV.chests=(SV.chests||0)+(P.nChest||0);SV.altars=(SV.altars||0)+(P.nAlt||0);SV.runs++;if(win){SV.wins++;SV.bossKills=(SV.bossKills||0)+1}
+  gotGoals=checkGoals();runHx(win);gotAch=checkAch();save();return earned}
 function endGame(win){st='end';musFadeOut();const earned=bank(win,false);if(!FAST)reportRun(win,Math.floor(T),P.lvl,kills);
   $('endH').textContent=win?'Рассвет':'Дорога забрала ещё одного';
   $('endP').textContent=win?'Властелин Ночи пал, и над горизонтом дрогнул бледный луч. Ты выжил.':'Ты упал в придорожную грязь, и ночь сомкнулась над тобой. На смену тебе придут новые, и кто-то пойдёт по этой дороге снова.';
   $('endS').textContent=(FAST?'Быстрый режим ('+FAST+' мин): достижения не засчитываются · ':'')+'Продержался: '+fmt(T)+' · Убито: '+kills+' · Уровень: '+P.lvl+(gotGoals.length?' · Открыто: '+gotGoals.map(k=>NAMES[k]).join(', '):'');
+  $('endX').innerHTML=endExtra();
   $('endC').innerHTML='+'+earned+'<i class="co"></i> (в сумке: '+SV.coins+')';
   $('ovEnd').classList.add('on');if(win)snd('win')}
-function hideAll(){['ovMenu','ovMeta','ovEnd','ovLvl','ovPause','ovFast','ovCode','ovTop'].forEach(i=>$(i).classList.remove('on'))}
-function startGame(){ainit();hideAll();newGame();st='play';musStart();$('bn').classList.remove('on');last=performance.now()}
+function hideAll(){['ovMenu','ovMeta','ovEnd','ovLvl','ovPause','ovFast','ovCode','ovTop','ovLog'].forEach(i=>$(i).classList.remove('on'))}
+function startGame(){ainit();hideAll();newGame();pending=upl('start');st='play';musStart();$('bn').classList.remove('on');last=performance.now()}
 function toMenu(){musStop();hideAll();newGame();st='menu';refreshMenu();$('ovMenu').classList.add('on')}
 function refreshMenu(){$('mCoins').innerHTML=SV.coins+'<i class="co"></i> · лучшее время: '+fmt(SV.best)+' · ночей: '+SV.runs+' · рассветов: '+SV.wins;
   const h=HEROES[SV.hero];$('mHero').textContent='Герой: '+h.n+' ('+NAMES[h.w]+')'}
@@ -765,7 +782,7 @@ function openMeta(t){metaTab=t;hideAll();st='meta';$('ovMeta').classList.add('on
 const fmtG=(q,v)=>q.time?fmt(Math.min(v,q.max)):Math.min(v,q.max);
 function renderMeta(){
   checkGoals();
-  const T2={shop:'Лавка',arsenal:'Арсенал',heroes:'Герои',book:'Книга слияний'};
+  const T2={shop:'Лавка',arsenal:'Арсенал',heroes:'Герои',ach:'Достижения',book:'Книга слияний'};
   $('metaT').textContent=T2[metaTab];$('metaC').innerHTML=SV.coins+'<i class="co"></i>';
   $('tabs').innerHTML=Object.keys(T2).map(k=>'<button class="tab'+(k===metaTab?' on':'')+'" data-tab="'+k+'" type="button">'+T2[k]+'</button>').join('');
   let h='';
@@ -776,9 +793,11 @@ function renderMeta(){
       return'<div class="mc'+(own?' sel':' lock')+'"><b>'+NAMES[u.k]+'</b><em>'+(w?'ОРУЖИЕ':'СНАРЯЖЕНИЕ')+'</em><span>'+(w?INTRO[u.k]:PTXT[u.k])+'</span><button class="btn sm" data-unl="'+u.k+'" type="button"'+(own||SV.coins<u.c?' disabled':'')+'>'+(own?'Открыто':u.c+'<i class="co"></i>')+'</button></div>'}).join('')+
     Object.keys(GOALS).map(k=>{const q=GOALS[k],own=!!SV.unl[k],w=ALLW.includes(k),v=q.cur();
       return'<div class="mc'+(own?' sel':' lock')+'"><b>'+NAMES[k]+'</b><em>'+(w?'ОРУЖИЕ':'СНАРЯЖЕНИЕ')+'</em><span>'+(w?INTRO[k]:PTXT[k])+'<br><small>'+(own?'Цель выполнена: ':'Цель: ')+q.t+'</small></span><button class="btn sm" type="button" disabled>'+(own?'Открыто':fmtG(q,v)+' / '+fmtG(q,q.max))+'</button></div>'}).join('')+'</div>'}
+  else if(metaTab==='ach'){const dn=ACH.filter(a=>SV.ach[a.k]).length;h='<p class="note">Выполнено: '+dn+' из '+ACH.length+'. Награда выдаётся сразу после ночи, в которой выполнено условие. В быстром режиме достижения не засчитываются.</p><div class="grid">'+ACH.map(a=>{const own=!!SV.ach[a.k],v=a.cur();
+    return'<div class="mc'+(own?' sel':' lock')+'"><b>'+a.n+'</b><em>Награда: '+rewTxt(a.r)+'</em><span>'+a.d+'</span><button class="btn sm" type="button" disabled>'+(own?'Выполнено':fmtG(a,v)+' / '+fmtG(a,a.max))+'</button></div>'}).join('')+'</div>'}
   else if(metaTab==='heroes'){h='<div class="grid">'+Object.keys(HEROES).map(k=>{const he=HEROES[k],own=!!SV.heroes[k],sel=SV.hero===k;
-    return'<div class="mc'+(sel?' sel':own?'':' lock')+'"><b>'+he.n+'</b><em>'+NAMES[he.w].toUpperCase()+'</em><span>'+he.d+'<br><small>'+he.tag+'</small></span>'+
-      (own?'<button class="btn sm" data-sel="'+k+'" type="button"'+(sel?' disabled':'')+'>'+(sel?'Выбран':'Выбрать')+'</button>':'<button class="btn sm" data-hero="'+k+'" type="button"'+(SV.coins<he.cost?' disabled':'')+'>'+he.cost+'<i class="co"></i></button>')+'</div>'}).join('')+'</div>'}
+    return'<div class="mc'+(sel?' sel':own?'':' lock')+'"><b>'+he.n+'</b><em>'+NAMES[he.w].toUpperCase()+'</em><span>'+he.d+'<br><small>'+he.tag+(!own&&he.ach?' · '+he.ach:'')+'<br>'+(own?'Уровень '+hxLevel(SV.hx[k]||0).l+(hxLevel(SV.hx[k]||0).need?' · опыт '+hxLevel(SV.hx[k]||0).cur+'/'+hxLevel(SV.hx[k]||0).need:' · максимум'):'')+'</small></span>'+
+      (own?'<button class="btn sm" data-sel="'+k+'" type="button"'+(sel?' disabled':'')+'>'+(sel?'Выбран':'Выбрать')+'</button>':he.ach?'<button class="btn sm" type="button" disabled>Секретный герой</button>':'<button class="btn sm" data-hero="'+k+'" type="button"'+(SV.coins<he.cost?' disabled':'')+'>'+he.cost+'<i class="co"></i></button>')+'</div>'}).join('')+'</div>'}
   else{h='<p class="note">Доведи оружие до '+WMAX+' уровня и подними нужный предмет минимум до '+EVO_NEED+' уровня: при следующем повышении уровня появится слияние. Открытые рецепты записываются сюда. Оружия и предметов в одну ночь можно нести не больше '+SLOTW+' и '+SLOTP+'.</p><div class="grid">'+Object.keys(EVO).map(k=>{const e=EVO[k],found=!!SV.evo[e.id];
     return'<div class="mc rec'+(found?' sel':' lock')+'"><b>'+NAMES[k]+' '+WMAX+'</b><span style="flex:0">+</span><b>'+NAMES[e.pass]+' '+EVO_NEED+'+</b><span style="flex:0">→</span><b style="color:'+(found?'#ffd870':'#8a7f6e')+'">'+(found?e.n:'???')+'</b>'+(found?'<span style="flex-basis:100%">'+e.d+'</span>':'')+'</div>'}).join('')+'</div>'}
   $('metaB').innerHTML=h}
@@ -792,6 +811,71 @@ $('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&
 $('bShop').onclick=()=>{ainit();openMeta('shop')};$('bHeroes').onclick=()=>{ainit();openMeta('heroes')};$('bBook').onclick=()=>{ainit();openMeta('book')};
 $('bBack').onclick=toMenu;
 
+/* ---------- extras: heroes XP, achievements, goals preview, changelog ---------- */
+const HX_MAX=15;
+const hxNeed=l=>120+60*l;
+function hxLevel(xp){let l=1;while(l<HX_MAX&&xp>=hxNeed(l)){xp-=hxNeed(l);l++}return{l,cur:l>=HX_MAX?0:xp,need:l>=HX_MAX?0:hxNeed(l)}}
+function heroBonus(l){const b={hp:3*(l-1),pow:.008*(l-1)};if(l>=5)b.reg=.1;if(l>=10)b.arm=1;if(l>=15){b.light=10;b.spd=.03}return b}
+const nEvo=()=>Object.keys(SV.evo||{}).length;
+const maxHeroLvl=()=>{let m=1;for(const k in SV.hx)m=Math.max(m,hxLevel(SV.hx[k]).l);return m};
+const ACH=[
+ {k:'k100',n:'Первая кровь',d:'Убить 100 врагов за всё время',cur:()=>SV.kills,max:100,r:{c:50}},
+ {k:'k1000',n:'Жнец',d:'Убить 1000 врагов за всё время',cur:()=>SV.kills,max:1000,r:{c:150}},
+ {k:'k5000',n:'Погибель нечисти',d:'Убить 5000 врагов за всё время',cur:()=>SV.kills,max:5000,r:{c:400,hx:300}},
+ {k:'k20000',n:'Очиститель дорог',d:'Убить 20000 врагов за всё время',cur:()=>SV.kills,max:20000,r:{c:1200}},
+ {k:'r10',n:'Бывалый',d:'Пройти 10 ночей',cur:()=>SV.runs,max:10,r:{c:100}},
+ {k:'r50',n:'Ветеран дорог',d:'Пройти 50 ночей',cur:()=>SV.runs,max:50,r:{c:400,hx:200}},
+ {k:'t5',n:'Дожить до сумерек',d:'Продержаться 5:00 за ночь',cur:()=>SV.best,max:300,time:1,r:{c:60}},
+ {k:'t10',n:'Полночь',d:'Продержаться 10:00 за ночь',cur:()=>SV.best,max:600,time:1,r:{c:120}},
+ {k:'t20',n:'Предрассветный час',d:'Продержаться 20:00 за ночь',cur:()=>SV.best,max:1200,time:1,r:{c:300,hx:150}},
+ {k:'l10',n:'Закалённый',d:'Достичь 10 уровня за ночь',cur:()=>SV.maxLvl||1,max:10,r:{c:80}},
+ {k:'l25',n:'Бывалый боец',d:'Достичь 25 уровня за ночь',cur:()=>SV.maxLvl||1,max:25,r:{c:200}},
+ {k:'l40',n:'Легенда дороги',d:'Достичь 40 уровня за ночь',cur:()=>SV.maxLvl||1,max:40,r:{c:500,hx:300}},
+ {k:'b1',n:'Первый рассвет',d:'Победить Властелина Ночи',cur:()=>SV.bossKills||0,max:1,r:{c:400,u:'censer'}},
+ {k:'b3',n:'Бич Властелина',d:'Победить Властелина Ночи 3 раза',cur:()=>SV.bossKills||0,max:3,r:{c:600,hero:'ash'}},
+ {k:'b10',n:'Хозяин рассвета',d:'Победить Властелина Ночи 10 раз',cur:()=>SV.bossKills||0,max:10,r:{c:1500,hx:800}},
+ {k:'e10',n:'Палач палачей',d:'Победить 10 Палачей',cur:()=>SV.elites||0,max:10,r:{c:150}},
+ {k:'e40',n:'Гроза палачей',d:'Победить 40 Палачей',cur:()=>SV.elites||0,max:40,r:{c:500}},
+ {k:'c10',n:'Кладоискатель',d:'Открыть 10 сундуков',cur:()=>SV.chests||0,max:10,r:{c:120}},
+ {k:'c50',n:'Хранитель сокровищ',d:'Открыть 50 сундуков',cur:()=>SV.chests||0,max:50,r:{c:450,hx:200}},
+ {k:'a5',n:'Осквернитель алтарей',d:'Очистить 5 алтарей тьмы',cur:()=>SV.altars||0,max:5,r:{c:150}},
+ {k:'a25',n:'Жрец света',d:'Очистить 25 алтарей тьмы',cur:()=>SV.altars||0,max:25,r:{c:500}},
+ {k:'g1k',n:'Копилка',d:'Собрать 1000 монет за всё время',cur:()=>SV.totalCoins||0,max:1000,r:{u:'ring'}},
+ {k:'g5k',n:'Золотой запас',d:'Собрать 5000 монет за всё время',cur:()=>SV.totalCoins||0,max:5000,r:{c:500}},
+ {k:'v1',n:'Алхимик',d:'Открыть первое слияние',cur:()=>nEvo(),max:1,r:{c:100}},
+ {k:'v5',n:'Мастер слияний',d:'Открыть 5 слияний',cur:()=>nEvo(),max:5,r:{c:300,hx:200}},
+ {k:'vall',n:'Хранитель книги',d:'Открыть все слияния',cur:()=>nEvo(),max:Object.keys(EVO).length,r:{c:1000}},
+ {k:'m1',n:'Мастер оружия',d:'Довести оружие до 8 уровня',cur:()=>Object.keys(SV.maxed||{}).length,max:1,r:{c:100}},
+ {k:'m5',n:'Арсенал мастера',d:'Довести до 8 уровня 5 разных видов оружия',cur:()=>Object.keys(SV.maxed||{}).length,max:5,r:{c:400}},
+ {k:'h3',n:'Отряд',d:'Нанять 3 героев',cur:()=>Object.keys(SV.heroes).length,max:3,r:{c:200}},
+ {k:'hall',n:'Полный состав',d:'Собрать всех героев',cur:()=>Object.keys(SV.heroes).length,max:Object.keys(HEROES).length,r:{c:800}},
+ {k:'hl5',n:'Закалка героя',d:'Довести героя до 5 уровня',cur:()=>maxHeroLvl(),max:5,r:{c:150}},
+ {k:'hl10',n:'Прославленный',d:'Довести героя до 10 уровня',cur:()=>maxHeroLvl(),max:10,r:{c:400}},
+ {k:'hl15',n:'Живая легенда',d:'Довести героя до 15 уровня',cur:()=>maxHeroLvl(),max:15,r:{c:1000}}];
+function rewTxt(r){const o=[];if(r.c)o.push(r.c+' монет');if(r.u)o.push('предмет «'+NAMES[r.u]+'»');if(r.hx)o.push(r.hx+' опыта героя');if(r.hero)o.push('герой «'+HEROES[r.hero].n+'»');return o.join(', ')}
+function applyReward(r){if(r.c)SV.coins+=r.c;if(r.u)SV.unl[r.u]=1;if(r.hx)SV.hx[SV.hero]=(SV.hx[SV.hero]||0)+r.hx;if(r.hero)SV.heroes[r.hero]=1}
+function checkAch(){const got=[];for(const a of ACH){if(SV.ach[a.k])continue;if(a.cur()>=a.max){SV.ach[a.k]=1;applyReward(a.r);got.push(a)}}if(got.length)save();return got}
+function runHx(win){const xp=Math.floor(T/8)+Math.floor(kills/8)+(win?200:0),h=SV.hero,b=hxLevel(SV.hx[h]||0).l;SV.hx[h]=(SV.hx[h]||0)+xp;const a=hxLevel(SV.hx[h]).l;lastRun={xp,hero:h,from:b,to:a}}
+function nextGoals(){const c=[];
+  for(const a of ACH)if(!SV.ach[a.k]){const v=a.cur();c.push({r:Math.min(.999,v/a.max),t:a.n+': '+a.d,p:fmtG(a,v)+' / '+fmtG(a,a.max)})}
+  for(const k in GOALS)if(!SV.unl[k]){const q=GOALS[k],v=q.cur();c.push({r:Math.min(.999,v/q.max),t:'Откроет «'+NAMES[k]+'»: '+q.t,p:fmtG(q,v)+' / '+fmtG(q,q.max)})}
+  c.sort((x,y)=>y.r-x.r);return c.slice(0,3)}
+function endExtra(){
+  if(FAST)return'<small>Быстрый режим: опыт героя, цели и достижения не засчитываются.</small>';
+  let h='';
+  if(lastRun){const H=HEROES[lastRun.hero],lv=hxLevel(SV.hx[lastRun.hero]||0);h+='<div>Опыт героя «'+H.n+'»: <b>+'+lastRun.xp+'</b> · уровень '+lv.l+(lv.need?' ('+lv.cur+'/'+lv.need+')':' (максимум)')+(lastRun.to>lastRun.from?' <b style="color:#ffd870">— новый уровень!</b>':'')+'</div>'}
+  for(const a of gotAch)h+='<div style="color:#ffd870">Достижение: <b>'+a.n+'</b> — награда: '+rewTxt(a.r)+'</div>';
+  const ng=nextGoals();if(ng.length){h+='<div style="margin-top:6px;color:#a8998a">Ближайшие цели:</div>';for(const g of ng)h+='<div>• '+g.t+' <span style="color:#c9a23a">('+g.p+')</span></div>'}
+  return h}
+const CHANGELOG=[
+ {v:'1.7',d:'21.10.2026',t:['Внутриигровые достижения с наградами: монеты, предметы, опыт героя и новые герои (вкладка «Достижения»)','Опыт и уровни героев: чем больше играешь героем, тем он сильнее','Новые герои: Ведунья Сельма, Кузнец Бренн, Дозорная Мира, Подрывник Фитиль и секретный Пепельный рыцарь','Экран итогов показывает опыт героя, полученные награды и ближайшие к выполнению цели','Новые уровни прокачки в лавке и три новых улучшения: Притяжение, Быстрые руки, Запасливость','Кнопка «Что нового» с историей обновлений']},
+ {v:'1.6',d:'21.10.2026',t:['Кнопка паузы на экране','Быков с рывком стало меньше, рывок реже','«Плащ странника» переименован в «Лиственная накидка», «Метательные ножи» — в «Иглы»']},
+ {v:'1.5',d:'21.10.2026',t:['Рейтинг клана в главном меню','Версия игры показывается в меню']},
+ {v:'1.4',d:'21.10.2026',t:['Лучников стало меньше, они появляются только после первого Палача','Структурированный спавн: темы с 1–2 типами врагов и комбинированные орды','Метки на карте: сундуки, алтари тьмы, Палачи и босс (только в обычном режиме)','Новое оружие: Щит стража']},
+ {v:'1.3',d:'21.10.2026',t:['Быстрый режим на 5 и 10 минут (без достижений и открытий, монеты начисляются)','Тайное слово в меню (иконка-птичка)']},
+ {v:'1.2',d:'20.10.2026',t:['Новые оружия: Ледяной посох, Секира-бумеранг','Цены в лавке выросли, Медальон Наттрамна стоит 2200','Облачное сохранение прогресса и отправка результатов в бота']},
+ {v:'1.1',d:'20.10.2026',t:['Ночь длится 20 минут, в конце сражение с Властелином Ночи','Шесть новых врагов, Палачи крепчают с каждым появлением','Уровни предметов до 8, три новых оружия и три новых снаряжения','Предметы открываются за выполнение целей','Экран подстраивается под телефон в вертикальном и горизонтальном положении']},
+ {v:'1.0',d:'20.10.2026',t:['Первая версия игры']}];
 /* ---------- input ---------- */
 addEventListener('keydown',e=>{
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)&&st==='play')e.preventDefault();
@@ -912,7 +996,7 @@ function frame(now){
   requestAnimationFrame(frame)}
 setView();newGame();refreshMenu();addEventListener('resize',setView);addEventListener('orientationchange',()=>setTimeout(setView,150));
 requestAnimationFrame(frame);
-window.__dbg={setFast(n){FAST=n},PO:()=>PO,endGame,ET,tune(o){if('NEED_A'in o)NEED_A=o.NEED_A;if('NEED_B'in o)NEED_B=o.NEED_B;if('NEED_C'in o)NEED_C=o.NEED_C;if('HP_A'in o)HP_A=o.HP_A;if('HP_B'in o)HP_B=o.HP_B;if('RATE_A'in o)RATE_A=o.RATE_A;if('RATE_B'in o)RATE_B=o.RATE_B;if('RATE_C'in o)RATE_C=o.RATE_C},step(dt,n){for(let i=0;i<n&&st==='play';i++)update(dt)},get:()=>({st,T,kills,hp:P.hp,mhp:P.mhp,lvl:P.lvl,n:E.length,w:P.w,p:P.p,evo:P.evo,coins:P.coins,x:P.x,y:P.y}),
+window.__dbg={SV:()=>SV,setFast(n){FAST=n},PO:()=>PO,endGame,ET,tune(o){if('NEED_A'in o)NEED_A=o.NEED_A;if('NEED_B'in o)NEED_B=o.NEED_B;if('NEED_C'in o)NEED_C=o.NEED_C;if('HP_A'in o)HP_A=o.HP_A;if('HP_B'in o)HP_B=o.HP_B;if('RATE_A'in o)RATE_A=o.RATE_A;if('RATE_B'in o)RATE_B=o.RATE_B;if('RATE_C'in o)RATE_C=o.RATE_C},step(dt,n){for(let i=0;i<n&&st==='play';i++)update(dt)},get:()=>({st,T,kills,hp:P.hp,mhp:P.mhp,lvl:P.lvl,n:E.length,w:P.w,p:P.p,evo:P.evo,coins:P.coins,x:P.x,y:P.y}),
   setVec(v){dbgVec=v},E:()=>E,P:()=>P,SV,pick,choices:()=>choicesNow,start:startGame,menu:toMenu,openMeta,openLevel,save,set(k,v){if(k==='T')T=v},bankIt:()=>bank,mus:()=>mus?{src:mus.src.split('/').pop(),t:mus.currentTime,d:mus.duration,paused:mus.paused,muted:mus.muted,vol:mus.volume}:null,musNext,seekEnd:()=>{if(mus&&isFinite(mus.duration))mus.currentTime=Math.max(0,mus.duration-.6)}};
 })();
 </script>
