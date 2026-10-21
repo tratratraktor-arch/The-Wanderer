@@ -37,6 +37,8 @@ canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 .tr b{width:1.6em;color:#c9a23a}.tr span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tr i{font-style:normal;color:#a8998a;font-size:15px;white-space:nowrap}
 #bossb{left:18%;right:18%;top:calc(1cqw + max(18px,4.4cqw) + 1.6cqw);height:max(10px,2.2cqw);background:#120c0c;border:max(2px,.3cqw) solid var(--edge);display:none}#bossb.on{display:block}#bossf{display:block;height:100%;width:100%;background:linear-gradient(#a03aff,#4a1a8a)}#bosst{position:absolute;inset:0;text-align:center;font-size:max(8px,1.6cqw);line-height:max(10px,2.2cqw);color:#f0e0ff;letter-spacing:.2em}
 #stage.nohud .hud,#stage.nohud #mute{visibility:hidden}
+#bPause{position:absolute;right:2cqw;top:calc(2cqw + max(52px,12cqw));background:rgba(10,8,12,.7);color:var(--parch);border:1px solid var(--edge);font:inherit;font-weight:700;font-size:max(12px,2.4cqw);letter-spacing:.1em;padding:.25em .7em;cursor:pointer;z-index:5}
+#stage.nohud #bPause{visibility:hidden}
 #mute{position:absolute;right:2cqw;bottom:max(10px,2.4cqw);background:rgba(10,8,12,.7);color:var(--parch);border:1px solid var(--edge);font:inherit;font-size:max(10px,1.8cqw);padding:.3em .7em;cursor:pointer}
 .co{display:inline-block;width:.8em;height:.8em;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff0a0,#c9a23a 60%,#7a5a14);vertical-align:-.08em;margin:0 .15em}
 .ov{position:fixed;inset:0;z-index:50;display:none;overflow:auto;background:rgba(5,4,7,.88);padding:16px}
@@ -90,7 +92,7 @@ canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 <div class="hud" id="xp"><i id="xpf"></i></div>
 <div class="hud" id="bn"></div>
 <div class="hud" id="bossb"><i id="bossf"></i><span id="bosst">ВЛАСТЕЛИН НОЧИ</span></div>
-<button id="mute" type="button">звук: вкл</button>
+<button id="bPause" type="button" aria-label="Пауза">II</button><button id="mute" type="button">звук: вкл</button>
 </div>
 </div>
 
@@ -189,7 +191,7 @@ function reportRun(win,t,lvl,k){try{if(!API_URL||!window.Telegram||!Telegram.Web
       .catch(()=>{busy=false;$('cMsg').textContent='Нет связи с сервером. Попробуй позже.'})}
   $('cOk').onclick=send;$('cIn').addEventListener('keydown',e=>{if(e.key==='Enter')send()})})();
 /* ---------- top & version ---------- */
-const GAME_VER='1.5';
+const GAME_VER='1.6';
 (function(){$('mVer').textContent='Версия '+GAME_VER;
   $('bTop').onclick=()=>{$('ovTop').classList.add('on');const L=$('topList');L.textContent='Загрузка...';
     fetch(API_URL+'/api/game/top').then(r=>r.json()).then(j=>{L.textContent='';if(!j||!j.ok||!j.top||!j.top.length){L.textContent='Пока никто не прошёл ни одной ночи.';return}
@@ -321,6 +323,7 @@ function snd(k){if(!ac)return;const now=performance.now();if(lastS[k]&&now-lastS
   case'level':[0,1,2,3].forEach(i=>setTimeout(()=>tone(392*Math.pow(1.26,i),392*Math.pow(1.26,i),.18,'triangle',.1),i*80));break;
   case'evo':[0,2,4,7,9].forEach((s,i)=>setTimeout(()=>tone(262*Math.pow(2,s/7),262*Math.pow(2,s/7),.35,'sawtooth',.08),i*110));break;
   case'boss':tone(90,40,1.1,'sawtooth',.2);break;case'win':[0,2,4,7].forEach((s,i)=>setTimeout(()=>tone(330*Math.pow(2,s/7),330*Math.pow(2,s/7),.5,'triangle',.12),i*220));break}}
+$('bPause').onclick=e=>{e.stopPropagation();setPause(true)};
 $('mute').onclick=e=>{e.stopPropagation();snOn=!snOn;if(mg)mg.gain.value=snOn?.6:0;if(mus)mus.muted=!snOn;e.target.textContent='звук: '+(snOn?'вкл':'выкл')};
 /* ---------- music: gameplay playlist, fully shuffled ---------- */
 const MUSIC={game:['midnight-witch-hunt.mp3','friedhofsbewohner-1.mp3','forgotten-ruin.mp3','um-mitternacht.mp3']};
@@ -341,14 +344,14 @@ function musFadeOut(){if(!mus||mFade)return;mFade=setInterval(()=>{if(!mus){clea
   mus.volume=Math.max(0,mus.volume-.04);if(mus.volume<=.001){clearInterval(mFade);mFade=null;mus.pause()}},100)}
 
 /* ---------- data ---------- */
-const NAMES={sword:'Меч Люмос',crossbow:'Арбалет',lantern:'Фонарь',oil:'Горящее масло',knives:'Метательные ножи',censer:'Кадило',
+const NAMES={sword:'Меч Люмос',crossbow:'Арбалет',lantern:'Фонарь',oil:'Горящее масло',knives:'Иглы',censer:'Кадило',
   spear:'Копьё стражи',thunder:'Жезл бури',bomb:'Пороховая бочка',frost:'Ледяной посох',shield:'Щит стража',axe:'Секира-бумеранг',
   boots:'Сапоги дозорного',cuirass:'Кираса',amulet:'Знак Солнца',herbs:'Целебные травы',whetstone:'Точило',ring:'Кольцо Левиафана',charm:'Оберег Мракоборца',
-  cloak:'Плащ странника',fang:'Клык упыря',book:'Книга Левиафана'};
+  cloak:'Лиственная накидка',fang:'Клык упыря',book:'Книга Левиафана'};
 const INTRO={
  sword:'Широкий взмах в сторону ближайшего врага.',crossbow:'Болт летит в ближайшего врага.',
  lantern:'Жжёт всех, кто подошёл вплотную, и освещает дорогу.',oil:'Бросок горящего масла в гущу врагов.',
- knives:'Нож летит туда, куда ты идёшь.',censer:'Тяжёлое кадило вращается вокруг тебя.',
+ knives:'Игла летит туда, куда ты идёшь.',censer:'Тяжёлое кадило вращается вокруг тебя.',
  spear:'Колющий выпад: пробивает всех врагов на линии удара.',thunder:'Молния бьёт случайного врага поблизости и всё вокруг него.',
  bomb:'Бочка с порохом летит во врагов и взрывается спустя мгновение.',
  shield:'Щиты вращаются вокруг тебя, бьют врагов и отбивают снаряды.',frost:'Ледяная волна вокруг тебя ранит и надолго замедляет врагов.',axe:'Секира летит вперёд, возвращается и рубит всех на пути.'};
@@ -364,7 +367,7 @@ const EVO={
  crossbow:{pass:'ring',id:'repeater',n:'Репетир Левиафана',d:'Три пробивающих болта, стрельба почти без остановки.'},
  lantern:{pass:'amulet',id:'sunface',n:'Лик Солнца',d:'Огромный круг света, который жжёт всё живое.'},
  oil:{pass:'charm',id:'hellfire',n:'Адское пламя',d:'Четыре сосуда, огромные лужи, горят долго.'},
- knives:{pass:'boots',id:'bladestorm',n:'Буря клинков',d:'Ножи летят сразу в восемь сторон.'},
+ knives:{pass:'boots',id:'bladestorm',n:'Игольный шторм',d:'Иглы летят сразу в восемь сторон.'},
  censer:{pass:'herbs',id:'holycenser',n:'Кадило Исцеления',d:'Четыре тяжёлых кадила, каждый удар немного лечит.'},
  spear:{pass:'cloak',id:'lance',n:'Пика Рассвета',d:'Длинный выпад вперёд и назад, пробивает всё на линии.'},
  thunder:{pass:'book',id:'wrath',n:'Гнев небес',d:'Шесть молний за раз, каждая с огромным радиусом.'},
@@ -476,14 +479,14 @@ function spawn(t,pos,hpMul){const d=ET[t],[x,y]=pos||ringPos(238+RR()*26),sc=(t=
   const e={id:nextId++,t,d,x,y,hp,mhp:hp,kx:0,ky:0,fl:0,fr:RR()*4,face:0,r:d.r,ph:RR()*6,boss:t==='elite'||t==='boss',ct:0,sh:1+RR()*2,cd:2+RR()*3,st:0,wind:0,dx:0,dy:0,s1:3,s2:4,s3:7,ph0:0};
   E.push(e);return e}
 function banner(s){const b=$('bn');b.textContent=s;b.classList.add('on');bnT=3}
-const SPAWN=[['rag',0,34],['wolf',0,30],['crow',90,9],['archer',135,4],['plague',140,5],['ghoul',170,9],['boar',240,7],['wraith',320,7],['bloater',400,5],['necro',500,4],['knight',620,5]];
+const SPAWN=[['rag',0,34],['wolf',0,30],['crow',90,9],['archer',135,4],['plague',140,5],['ghoul',170,9],['boar',240,4],['wraith',320,7],['bloater',400,5],['necro',500,4],['knight',620,5]];
 var SPR=.88;
 /* темы: [от, до (время сложности), веса типов, объявление] — в это окно спавнятся только перечисленные враги */
 const THEMES=[[55,95,{wolf:1},'Из тьмы выходят волки'],[170,215,{ghoul:3,rag:2},'Кладбище просыпается'],[275,320,{boar:2,wolf:3},'Топот в темноте'],
  [365,405,{crow:1},'Вороньи тучи'],[450,500,{wraith:3,ghoul:2},'Холодный туман'],[545,600,{plague:2,bloater:2,rag:3},'Мор и гниль'],
  [655,705,{knight:2,necro:1},'Тёмная процессия'],[770,820,{ghoul:3,wraith:2},'Мёртвые поднимаются'],[885,935,{boar:2,knight:2},'Таран'],[1000,1060,{wolf:4,wraith:2},'Последний натиск']];
 const ELITES=[120,240,360,480,600,720,840,960,1080],ELCNT=[1,1,2,2,2,3,3,3,4];
-const HORDES=[[200,'wolf',30,'Волчья стая'],[330,'crow',26,'Воронья стая'],[480,'boar',10,'Стадо вепрей'],[600,'wraith',18,'Призраки поднимаются'],
+const HORDES=[[200,'wolf',30,'Волчья стая'],[330,'crow',26,'Воронья стая'],[480,'boar',7,'Стадо вепрей'],[600,'wraith',18,'Призраки поднимаются'],
   [720,[['wolf',34],['wraith',10]],0,'Волки и призраки'],[840,[['ghoul',20],['bloater',4]],0,'Упыри выходят из могил'],[960,[['knight',8],['necro',2]],0,'Мёртвая стража'],[1060,[['wolf',50],['boar',8],['wraith',8]],0,'Последняя волна']];
 var RATE_A=.9,RATE_B=115,RATE_C=1.1e6;
 function spawnLogic(dt){
@@ -494,6 +497,7 @@ function spawnLogic(dt){
     let tot=0;const w=SPAWN.map(([t,from,b])=>{if(V<from)return 0;const x=b*((t==='rag'||t==='wolf')?Math.max(.45,1-V/1800):1);tot+=x;return x});
     let r=RR()*tot,t='rag';for(let i=0;i<SPAWN.length;i++){r-=w[i];if(r<=0){t=SPAWN[i][0];break}}
     if(TH){const ks=Object.keys(TH[2]);let tt=0;ks.forEach(k=>tt+=TH[2][k]);let q=RR()*tt;t=ks[0];for(const k of ks){q-=TH[2][k];if(q<=0){t=k;break}}}
+    if(t==='boar'){let n=0;for(const o of E)if(o.t==='boar'&&!o.dead)n++;if(n>=Math.min(6,3+Math.floor(V/300)))t='wolf'}
     if(t==='archer'){let n=0;for(const o of E)if(o.t==='archer'&&!o.dead)n++;if(n>=Math.min(8,2+Math.floor(V/200)))t='rag'}
     spawn(t)}
   ELITES.forEach((tm,i)=>{if(V>=tm&&!evDone['e'+i]){evDone['e'+i]=1;
@@ -604,7 +608,7 @@ function update(dt){
     if(dd.charge){
       if(e.st===0){e.cd-=dt;if(e.cd<=0&&d<170){e.st=1;e.wind=.6;e.dx=dx/d;e.dy=dy/d}}
       else if(e.st===1){vx=0;vy=0;e.wind-=dt;if(e.wind<=0){e.st=2;e.wind=.7}}
-      else{vx=e.dx*190;vy=e.dy*190;e.wind-=dt;if(e.wind<=0){e.st=0;e.cd=3+RR()*2}}}
+      else{vx=e.dx*190;vy=e.dy*190;e.wind-=dt;if(e.wind<=0){e.st=0;e.cd=4.5+RR()*2.5}}}
     if(e.t==='boss'){[vx,vy]=bossAI(e,dt,dx,dy,d)}
     let fz=1;if(e.frz>0){e.frz-=dt;fz=e.t==='boss'?.75:.4}
     e.x+=(vx*fz+e.kx)*dt;e.y+=(vy*fz+e.ky)*dt;e.kx*=Math.max(0,1-9*dt);e.ky*=Math.max(0,1-9*dt);
