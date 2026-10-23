@@ -126,7 +126,7 @@ canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 </div></div>
 
 <div class="ov" id="ovFast"><div class="in"><h2>Быстрый режим</h2><p>Короткая ночь с боссом в конце. Монеты за неё начисляются, но достижения, цели, открытия и книга слияний не засчитываются, а результат не уходит в бот.</p><div class="menu"><button class="btn" id="bF5" type="button">5 минут</button><button class="btn" id="bF10" type="button">10 минут</button><button class="btn" id="bFBack" type="button">Назад</button></div></div></div>
-<div class="ov" id="ovTop"><div class="in"><h2>Рейтинг клана</h2><div id="topTabs"><button type="button">Победы</button><button type="button">Без быстрого</button><button type="button">♾ Время</button></div><div id="topList"></div><div class="menu"><button class="btn" id="bTopBack" type="button">Назад</button></div></div></div>
+<div class="ov" id="ovTop"><div class="in"><h2>Рейтинг клана</h2><div id="topTabs"><button type="button">Победы</button><button type="button">Монеты</button><button type="button">♾ Время</button></div><div id="topList"></div><div class="menu"><button class="btn" id="bTopBack" type="button">Назад</button></div></div></div>
 <div class="ov" id="ovLog"><div class="in" style="max-width:560px"><h2>Что нового</h2><div id="logList" style="text-align:left;width:100%"></div><div class="menu"><button class="btn" id="bLogBack" type="button">Назад</button></div></div></div>
 <div class="ov" id="ovCode"><div class="in"><h2>Тайное слово</h2><p>Введи код, чтобы получить награду в боте.</p><input id="cIn" type="text" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false"><p class="hint" id="cMsg"></p><div class="menu"><button class="btn" id="cOk" type="button">Подтвердить</button><button class="btn" id="cBack" type="button">Назад</button></div></div></div>
 <div class="ov" id="ovMeta"><div class="in">
@@ -186,7 +186,7 @@ function cloudLoad(){if(!cloudOK())return;try{const C=Telegram.WebApp.CloudStora
 setTimeout(cloudLoad,300);
 function reportRun(win,t,lvl,k){try{if(!API_URL||!window.Telegram||!Telegram.WebApp||!Telegram.WebApp.initData)return;
   fetch(API_URL+'/api/game/run',{method:'POST',headers:{'Content-Type':'application/json'},keepalive:true,
-    body:JSON.stringify({initData:Telegram.WebApp.initData,t:t,lvl:lvl,kills:k,win:!!win,mode:ENDLESS?'e':FAST?'f':'n',fast:FAST||0})}).then(r=>r.json()).then(j=>{
+    body:JSON.stringify({initData:Telegram.WebApp.initData,t:t,lvl:lvl,kills:k,win:!!win,mode:ENDLESS?'e':FAST?'f':'n',fast:FAST||0,coins:Math.floor(P.coins||0)})}).then(r=>r.json()).then(j=>{
       if(j&&j.achievements&&j.achievements.length){const el=document.getElementById('endS');if(el)el.textContent+=' · Достижение в боте: '+j.achievements.join(', ')}}).catch(()=>{})}catch(e){}}
 
 /* ---------- secret code ---------- */
@@ -209,13 +209,13 @@ setTimeout(function(){const L=document.getElementById('logList');if(!L)return;fo
   document.getElementById('bLog').onclick=()=>document.getElementById('ovLog').classList.add('on');document.getElementById('bLogBack').onclick=()=>document.getElementById('ovLog').classList.remove('on')},0);
 (function(){$('mVer').textContent='Версия '+GAME_VER;
   let topD=null,topTab=0;
-  const TABS=[['wins_all','Победы','побед: ','wins'],['wins_normal','Без быстрого','побед: ','wins'],['endless','Бесконечный','','best']];
+  const TABS=[['wins_all'],['coins'],['endless']];
   function drawTop(){const L=$('topList');L.textContent='';
     document.querySelectorAll('#topTabs button').forEach((b,i)=>b.classList.toggle('on',i===topTab));
     const t=TABS[topTab],arr=(topD&&topD[t[0]])||[];
-    if(!arr.length){L.textContent=topTab===2?'Пока никто не продержался в бесконечном режиме.':'Пока никто не одержал побед.';return}
+    if(!arr.length){L.textContent=topTab===2?'Пока никто не продержался в бесконечном режиме.':topTab===1?'Пока никто не собрал монет.':'Пока никто не одержал побед.';return}
     arr.forEach((p,i)=>{const r=document.createElement('div');r.className='tr';const n=document.createElement('b');n.textContent=(i+1)+'.';const nm=document.createElement('span');nm.textContent=String(p.name||'Без имени').slice(0,24);
-      const st=document.createElement('i');st.textContent=topTab===2?'время '+fmt(p.best||0):'побед: '+(p.wins||0)+(p.best?' · '+fmt(p.best):'');r.append(n,nm,st);L.appendChild(r)})}
+      const st=document.createElement('i');st.textContent=topTab===2?'время '+fmt(p.best||0):topTab===1?(p.coins||0)+' монет':'побед: '+(p.wins||0)+(p.best?' · '+fmt(p.best):'');r.append(n,nm,st);L.appendChild(r)})}
   $('bTop').onclick=()=>{$('ovTop').classList.add('on');const L=$('topList');L.textContent='Загрузка...';
     fetch(API_URL+'/api/game/top').then(r=>r.json()).then(j=>{if(!j||!j.ok){L.textContent='Пока пусто.';return}
       if(!j.wins_all&&j.top)j.wins_all=j.top;topD=j;drawTop()}).catch(()=>{L.textContent='Нет связи с сервером. Попробуй позже.'})};
@@ -945,7 +945,7 @@ function endExtra(){
   const ng=nextGoals();if(ng.length){h+='<div style="margin-top:6px;color:#a8998a">Ближайшие цели:</div>';for(const g of ng)h+='<div>• '+g.t+' <span style="color:#c9a23a">('+g.p+')</span></div>'}
   return h}
 const CHANGELOG=[
- {v:'2.0',d:'23.10.2026',t:['Бесконечный режим в новой локации «Выжженная пустошь»: ночь не заканчивается, враги и Палачи крепнут, раз в 10 минут приходит Повелитель пепла (открывается после первой победы над Властелином Ночи)','Два новых врага пустоши: Тлеющий и Пепельная гончая','Рейтинг теперь из трёх списков: победы, победы без быстрого режима и время в бесконечном режиме','Результаты быстрого режима тоже попадают в общий счёт побед','Три новых достижения за время в бесконечном режиме']},
+ {v:'2.0',d:'23.10.2026',t:['Бесконечный режим в новой локации «Выжженная пустошь»: ночь не заканчивается, враги и Палачи крепнут, раз в 10 минут приходит Повелитель пепла (открывается после первой победы над Властелином Ночи)','Два новых врага пустоши: Тлеющий и Пепельная гончая','Рейтинг теперь из трёх списков: победы, собранные монеты и время в бесконечном режиме','Результаты быстрого режима тоже попадают в рейтинг','Три новых достижения за время в бесконечном режиме']},
  {v:'1.9.1',d:'21.10.2026',t:['Монет выпадает меньше: реже падают с врагов, скромнее награда за сундуки, алтари и победу','Цены в лавке, у героев и в арсенале выросли примерно в полтора раза, Медальон Наттрамна — 3000']},
  {v:'1.9',d:'21.10.2026',t:['Вторая локация «Вольмстадский Лес»: открывается после победы над Властелином Ночи, выбирается в главном меню','В лесу новые враги: Паук-ткач, Оборотень, Древень, Лесной дух, Споровик','Новый босс — Хозяин Чащи, новые тайлы и декорации','Первая локация теперь называется «Риммергорм»','Два новых достижения за победы в лесу']},
  {v:'1.8',d:'21.10.2026',t:['Три новых оружия: Громовой молот, Коса жнеца, Падающая звезда — у каждого есть слияние','Три новых предмета: Осколок зеркала (криты), Четырёхлистник (монеты), Сердце упыря (здоровье)','Новые условия открытия: победы над Властелином Ночи, Палачи, сундуки, слияния','Властелин Ночи стал сильнее: больше здоровья, чаще атаки, в третьей фазе зовёт рыцарей']},
