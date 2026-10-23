@@ -186,7 +186,7 @@ function cloudLoad(){if(!cloudOK())return;try{const C=Telegram.WebApp.CloudStora
 setTimeout(cloudLoad,300);
 function reportRun(win,t,lvl,k){try{if(!API_URL||!window.Telegram||!Telegram.WebApp||!Telegram.WebApp.initData)return;
   fetch(API_URL+'/api/game/run',{method:'POST',headers:{'Content-Type':'application/json'},keepalive:true,
-    body:JSON.stringify({initData:Telegram.WebApp.initData,t:t,lvl:lvl,kills:k,win:!!win,mode:ENDLESS?'e':FAST?'f':'n',fast:FAST||0,coins:Math.floor(P.coins||0)})}).then(r=>r.json()).then(j=>{
+    body:JSON.stringify({initData:Telegram.WebApp.initData,t:t,lvl:lvl,kills:k,win:!!win,mode:ENDLESS?'e':FAST?'f':'n',fast:FAST||0,coins:Math.floor(P.coins||0),total:Math.floor(SV.totalCoins||0)})}).then(r=>r.json()).then(j=>{
       if(j&&j.achievements&&j.achievements.length){const el=document.getElementById('endS');if(el)el.textContent+=' · Достижение в боте: '+j.achievements.join(', ')}}).catch(()=>{})}catch(e){}}
 
 /* ---------- secret code ---------- */
